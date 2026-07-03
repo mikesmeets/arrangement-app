@@ -1,0 +1,15 @@
+Purpose:
+This is an app used by a small florist to track inventory, create arrangements, price them, and upload them to their shopify store. It will be used by both mobile and desktop/browsers.
+
+Language:
+Python
+
+Key Pieces:
+Flower database - a database of flowers with a taxonomy that can be narrowed down from broad categories to specific colors. Flowers can be tied to purchased inventory to see current pricing and pricing trends.
+Inventory database - a database of particular flowers in stock with associated pricing that ties to the correct flower in the flower database.
+Vendors - vendors that we buy flowers and hardgoods from. Includes contact info. We want to be able to see both flowers and invoices from each vendor and track that over time. Also include contact info.
+Invoices - invoices from vendors when we purchase flowers that tied to the inventory database. We need to be able to take a picture or pdf of that invoice and pull out the relevant vendor, flower inventory with name, pricing, and quantity
+Arrangement maker - the heart of the app - combined flowers from inventory to create arrangements. Suggest pricing based on a global mark-up (use 4x to start). Create names and descriptions, with the option of using AI to generate a description. Include the ability to take a picture from mobile device to attach. Include shopify terms like collection, etc. Add the ability to push the product to shopify.
+
+DevOps:
+This will be webapp running on Railways. Plan to use their database and storage solution.

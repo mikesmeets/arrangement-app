@@ -1,0 +1,18 @@
+<div class="modal-backdrop" onclick="if(event.target===this)document.getElementById('modal-root').innerHTML='';">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 style="margin:0;">Add Flower</h2>
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-root').innerHTML='';">Close</button>
+    </div>
+    <form hx-post="{% url 'flower-add' %}" hx-target="#modal-root" hx-swap="innerHTML" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% for field in form %}
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      {% endfor %}
+      <p class="muted">Leave photo blank to auto-generate a color-coded thumbnail.</p>
+      <button type="submit" class="btn" style="margin-top:1rem;">Save</button>
+    </form>
+  </div>
+</div>

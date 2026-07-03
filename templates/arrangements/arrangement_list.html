@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Arrangements — TreBlooms{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;">
+  <h1>Arrangements</h1>
+  <form method="post" action="{% url 'arrangement-create' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn">+ New Arrangement</button>
+  </form>
+</div>
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>SKU</th>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Suggested price</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for arrangement in arrangements %}
+      <tr>
+        <td>{{ arrangement.sku }}</td>
+        <td>{{ arrangement.name }}</td>
+        <td>{{ arrangement.get_status_display }}</td>
+        <td>${{ arrangement.suggested_price|floatformat:2 }}</td>
+        <td><a class="btn" href="{% url 'arrangement-edit' arrangement.pk %}">Edit</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="muted">No arrangements yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

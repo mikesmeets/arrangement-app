@@ -1,0 +1,85 @@
+<div id="items-and-price">
+  <table>
+    <thead>
+      <tr>
+        <th>Flower</th>
+        <th>Qty</th>
+        <th>Per-stem cost</th>
+        <th>Total cost</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in arrangement.items.all %}
+      <tr>
+        <td>{{ item.flower }}</td>
+        <td>
+          <div class="qty-controls">
+            <button type="button" class="qty-btn"
+                    hx-post="{% url 'arrangement-update-item-qty' arrangement.pk item.id %}"
+                    hx-vals='{"delta": -1}'
+                    hx-target="#items-and-price"
+                    hx-swap="outerHTML"
+                    aria-label="Decrease quantity">&#9660;</button>
+            <input type="number" step="0.1" min="0" class="qty-input" value="{{ item.quantity }}"
+                   hx-post="{% url 'arrangement-set-item-qty' arrangement.pk item.id %}"
+                   hx-trigger="change"
+                   hx-target="#items-and-price"
+                   hx-swap="outerHTML"
+                   name="quantity"
+                   aria-label="Quantity">
+            <button type="button" class="qty-btn"
+                    hx-post="{% url 'arrangement-update-item-qty' arrangement.pk item.id %}"
+                    hx-vals='{"delta": 1}'
+                    hx-target="#items-and-price"
+                    hx-swap="outerHTML"
+                    aria-label="Increase quantity">&#9650;</button>
+          </div>
+        </td>
+        <td>${{ item.flower.current_avg_cost|floatformat:2 }}</td>
+        <td>${{ item.line_cost|floatformat:2 }}</td>
+        <td>
+          <button class="btn btn-danger"
+                  hx-post="{% url 'arrangement-remove-item' arrangement.pk item.id %}"
+                  hx-target="#items-and-price"
+                  hx-swap="outerHTML">Remove</button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="muted">No flowers added yet.</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if arrangement.items.all %}
+    <tfoot>
+      <tr>
+        <th colspan="3" style="text-align:right;">Subtotal</th>
+        <td>${{ arrangement.flower_cost|floatformat:2 }}</td>
+        <td><strong>Suggested</strong></td>
+      </tr>
+      <tr>
+        <th colspan="3" style="text-align:right;">Price</th>
+        <td>
+          <input type="number" step="0.01" min="0" id="id_price_override" name="price_override"
+                 value="{% if arrangement.price_override is not None %}{{ arrangement.price_override }}{% endif %}"
+                 placeholder="Enter to override"
+                 hx-post="{% url 'arrangement-set-price' arrangement.pk %}"
+                 hx-trigger="change"
+                 hx-target="#items-and-price"
+                 hx-swap="outerHTML">
+        </td>
+        <td>${{ arrangement.suggested_price|floatformat:2 }}</td>
+      </tr>
+      <tr>
+        <th colspan="3" style="text-align:right;">Multiple of cost</th>
+        <td>{% if arrangement.price_multiple is not None %}{{ arrangement.price_multiple }}x{% else %}—{% endif %}</td>
+        <td>{{ arrangement.markup }}x</td>
+      </tr>
+      <tr>
+        <th colspan="3" style="text-align:right;">Profit</th>
+        <td>${{ arrangement.profit|floatformat:2 }}</td>
+        <td>${{ arrangement.profit_at_suggested_price|floatformat:2 }}</td>
+      </tr>
+    </tfoot>
+    {% endif %}
+  </table>
+</div>

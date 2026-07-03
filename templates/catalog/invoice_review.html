@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ invoice.vendor|default:"New Invoice" }} — TreBlooms{% endblock %}
+{% block content %}
+<h1>{{ invoice.vendor|default:"New Invoice" }}</h1>
+<p class="muted">{{ invoice.date }} &middot; {{ invoice.get_status_display }}</p>
+
+<div class="card">
+  <h2>Invoice File</h2>
+  {% if invoice.file %}
+    <p class="muted">Current file: {{ invoice.file.name }}. Uploading a new one will run extraction again and add more line items below.</p>
+  {% endif %}
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% for field in file_form %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    {% endfor %}
+    <p class="muted">Take a photo of the invoice or upload a PDF and Claude will try to read the vendor and line items automatically.</p>
+    <button type="submit" class="btn" name="extract_file" value="1" style="margin-top:1rem;">Extract Invoice</button>
+  </form>
+</div>
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h2>Details</h2>
+    <button type="button" class="btn" hx-get="{% url 'vendor-add' %}" hx-target="#modal-root" hx-swap="innerHTML">+ Add Vendor</button>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    {% endfor %}
+    <button type="submit" class="btn" name="save_details" value="1" style="margin-top:1rem;">Save Details</button>
+  </form>
+</div>
+
+{% if invoice.raw_extracted_data.error %}
+<div class="card">
+  <p>Automatic extraction didn't run: {{ invoice.raw_extracted_data.error }}</p>
+</div>
+{% elif invoice.raw_extracted_data.vendor_name %}
+<div class="card">
+  <p class="muted">Claude read the vendor on the invoice as "{{ invoice.raw_extracted_data.vendor_name }}"{% if invoice.raw_extracted_data.date %} dated {{ invoice.raw_extracted_data.date }}{% endif %}.</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h2>Line Items</h2>
+    <button type="button" class="btn" hx-get="{% url 'flower-add' %}" hx-target="#modal-root" hx-swap="innerHTML">+ Add Flower</button>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Qty</th>
+          <th>Total cost</th>
+          <th>Per-stem cost</th>
+          <th>Flower</th>
+          <th>Size</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line_form in formset %}
+        <tr>
+          {{ line_form.id }}
+          <td>{{ line_form.name }}</td>
+          <td>{{ line_form.quantity }}</td>
+          <td>{{ line_form.total_cost }}</td>
+          <td>
+            {% if line_form.instance.pk %}${{ line_form.instance.per_stem_cost }}{% else %}<span class="muted">—</span>{% endif %}
+          </td>
+          <td>
+            {{ line_form.flower }}
+            {% if line_form.errors %}<ul class="errorlist">{% for field, errs in line_form.errors.items %}{% for e in errs %}<li>{{ e }}</li>{% endfor %}{% endfor %}</ul>{% endif %}
+          </td>
+          <td>{{ line_form.size }}</td>
+          <td>{{ line_form.grade }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted">Per-stem cost is calculated automatically from total cost &divide; qty once you save. The blank rows at the bottom are for adding line items by hand — fill in name, quantity, and total cost to add a new one. Leave "Flower" blank on any row to skip it — it won't be added to inventory. Don't see the right flower? Use the "+ Add Flower" button above — it'll show up in the dropdowns here automatically.</p>
+    <button type="submit" class="btn" name="confirm" value="1" style="margin-top:1rem;">Confirm &amp; Add to Inventory</button>
+    <a class="btn btn-secondary" href="{% url 'invoice-list' %}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

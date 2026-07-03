@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ flower }} — TreBlooms{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;">
+  <h1>{{ flower }}</h1>
+  <a class="btn" href="{% url 'flower-edit' flower.pk %}">Edit</a>
+</div>
+
+<div class="card" style="display:flex;gap:1.5rem;align-items:flex-start;">
+  {% if flower.image %}
+    <img src="{{ flower.image.url }}" alt="" class="flower-thumb-lg">
+  {% endif %}
+  <div>
+  <p><strong>Category:</strong> {{ flower.category }}</p>
+  <p><strong>Variety:</strong> {{ flower.variety.name }}</p>
+  <p><strong>Color:</strong> {{ flower.color }}</p>
+  <p><strong>Type:</strong> {{ flower.get_type_display }}</p>
+  <p><strong>Design category:</strong> {{ flower.get_design_category_display }}</p>
+  <p><strong>Currently on hand:</strong> {{ flower.quantity_on_hand }}</p>
+  <p><strong>Current avg cost:</strong> ${{ flower.current_avg_cost|floatformat:2 }}</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Price history</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Date received</th>
+        <th>Vendor</th>
+        <th>Qty</th>
+        <th>Per-stem cost</th>
+        <th>Change</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.item.date_received }}</td>
+        <td>{{ row.item.vendor }}</td>
+        <td>{{ row.item.quantity }}</td>
+        <td>${{ row.item.per_stem_cost|floatformat:2 }}</td>
+        <td>
+          {% if row.direction == "up" %}
+            <span style="color:#b23a3a;">&#9650; ${{ row.delta_abs|floatformat:2 }}</span>
+          {% elif row.direction == "down" %}
+            <span style="color:#4a9c5d;">&#9660; ${{ row.delta_abs|floatformat:2 }}</span>
+          {% elif row.direction == "flat" %}
+            <span class="muted">No change</span>
+          {% else %}
+            <span class="muted">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="muted">No purchase history yet for this flower.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<a class="btn btn-secondary" href="{% url 'flower-list' %}">Back to Flower Database</a>
+{% endblock %}

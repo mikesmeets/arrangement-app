@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Invoices — TreBlooms{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;">
+  <h1>Invoices</h1>
+  <form method="post" action="{% url 'invoice-create' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn">+ Add Invoice</button>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Vendor</th>
+        <th>Date</th>
+        <th>Total cost</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for invoice in invoices %}
+      <tr>
+        <td>{{ invoice.vendor|default:"—" }}</td>
+        <td>{{ invoice.date }}</td>
+        <td>${{ invoice.total_cost|floatformat:2 }}</td>
+        <td>{{ invoice.get_status_display }}</td>
+        <td><a class="btn" href="{% url 'invoice-review' invoice.pk %}">
+          {% if invoice.status == invoice.STATUS_CONFIRMED %}View{% else %}Review{% endif %}
+        </a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="muted">No invoices yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

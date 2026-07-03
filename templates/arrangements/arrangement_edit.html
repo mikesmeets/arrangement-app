@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ arrangement.name }} — TreBlooms{% endblock %}
+{% block content %}
+<h1>{{ arrangement.name }}</h1>
+<p class="muted">SKU: {{ arrangement.sku }}</p>
+
+<div class="card">
+  <h2>Details</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% for field in form %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    {% endfor %}
+    {% if arrangement.photo %}
+      <p class="muted">Current photo: {{ arrangement.photo.name }}</p>
+    {% endif %}
+    <button type="submit" class="btn" style="margin-top:1rem;">Save Details</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Flowers</h2>
+  <p class="muted">Tap a flower to add one stem.</p>
+  {% regroup flowers by category as category_list %}
+  {% for category in category_list %}
+    <h3 class="flower-grid-heading">{{ category.grouper }}</h3>
+    <div class="flower-grid">
+      {% for flower in category.list %}
+        <button type="button"
+                class="flower-btn design-{{ flower.design_category }}"
+                hx-post="{% url 'arrangement-add-item' arrangement.pk %}"
+                hx-vals='{"flower": "{{ flower.id }}", "quantity": 1}'
+                hx-target="#items-and-price"
+                hx-swap="outerHTML">
+          {% if flower.image %}
+            <img src="{{ flower.image.url }}" alt="" class="flower-thumb">
+          {% endif %}
+          <span class="flower-btn-name">{{ flower.variety.name }} {{ flower.color }}</span>
+          <span class="flower-btn-meta">{{ flower.get_design_category_display }}</span>
+        </button>
+      {% endfor %}
+    </div>
+  {% empty %}
+    <p class="muted">No flowers in the taxonomy yet. Add some in the <a href="{% url 'admin:index' %}">admin</a>.</p>
+  {% endfor %}
+
+  {% include "arrangements/_items_and_price.html" %}
+</div>
+
+<div class="card">
+  <a class="btn btn-secondary" href="{% url 'arrangement-list' %}">Back to list</a>
+  <form method="post" action="{% url 'arrangement-delete' arrangement.pk %}" style="display:inline"
+        onsubmit="return confirm('Delete this arrangement?');">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Delete Arrangement</button>
+  </form>
+</div>
+{% endblock %}

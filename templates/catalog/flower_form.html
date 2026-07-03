@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — TreBlooms{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>
+<div class="card">
+  {% if flower.image %}
+    <img src="{{ flower.image.url }}" alt="" class="flower-thumb-lg" style="margin-bottom:1rem;">
+  {% endif %}
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% for field in form %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    {% endfor %}
+    <p class="muted">Leave photo blank to auto-generate a color-coded thumbnail.</p>
+    <button type="submit" class="btn" style="margin-top:1rem;">Save</button>
+    {% if flower %}
+      <a class="btn btn-secondary" href="{% url 'flower-detail' flower.pk %}">Cancel</a>
+    {% else %}
+      <a class="btn btn-secondary" href="{% url 'flower-list' %}">Cancel</a>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}

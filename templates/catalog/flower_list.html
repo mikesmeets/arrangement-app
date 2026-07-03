@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Flower Database — TreBlooms{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;">
+  <h1>Flower Database</h1>
+  <button type="button" class="btn" hx-get="{% url 'flower-add' %}" hx-target="#modal-root" hx-swap="innerHTML">+ Add Flower</button>
+</div>
+
+{% if any_filter_active %}
+<p><a href="{% url 'flower-list' %}">Clear all filters</a></p>
+{% endif %}
+
+<div class="card" id="flower-table-card"
+     hx-get="{{ request.get_full_path }}"
+     hx-trigger="flower-added from:body"
+     hx-select="#flower-table-card"
+     hx-target="this"
+     hx-swap="outerHTML">
+  <table>
+    <thead>
+      <tr>
+        <th>
+          <a href="{{ sort_urls.category }}">Category {{ sort_indicators.category }}</a>
+          <details class="col-filter">
+            <summary class="filter-btn {% if selected_category %}filter-btn-active{% endif %}" title="Filter Category"><svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h14l-5 6.2V13l-4 2V8.2z"/></svg></summary>
+            <form method="get" class="col-filter-popover">
+              <input type="hidden" name="variety" value="{{ variety_query }}">
+              <input type="hidden" name="design_category" value="{{ selected_design_category }}">
+              <input type="hidden" name="on_hand_min" value="{{ on_hand_min }}">
+              <input type="hidden" name="avg_cost_min" value="{{ avg_cost_min }}">
+              <input type="hidden" name="color" value="{{ color_query }}">
+              <input type="hidden" name="sort" value="{{ current_sort }}">
+              <select name="category">
+                <option value="">All categories</option>
+                {% for c in categories %}
+                  <option value="{{ c.id }}" {% if selected_category == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn">Apply</button>
+            </form>
+          </details>
+        </th>
+        <th>
+          <a href="{{ sort_urls.variety }}">Variety {{ sort_indicators.variety }}</a>
+          <details class="col-filter">
+            <summary class="filter-btn {% if variety_query %}filter-btn-active{% endif %}" title="Filter Variety"><svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h14l-5 6.2V13l-4 2V8.2z"/></svg></summary>
+            <form method="get" class="col-filter-popover">
+              <input type="hidden" name="category" value="{{ selected_category }}">
+              <input type="hidden" name="design_category" value="{{ selected_design_category }}">
+              <input type="hidden" name="on_hand_min" value="{{ on_hand_min }}">
+              <input type="hidden" name="avg_cost_min" value="{{ avg_cost_min }}">
+              <input type="hidden" name="color" value="{{ color_query }}">
+              <input type="hidden" name="sort" value="{{ current_sort }}">
+              <input type="text" name="variety" value="{{ variety_query }}" placeholder="Contains…">
+              <button type="submit" class="btn">Apply</button>
+            </form>
+          </details>
+        </th>
+        <th>
+          Colors
+          <details class="col-filter">
+            <summary class="filter-btn {% if color_query %}filter-btn-active{% endif %}" title="Filter Colors"><svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h14l-5 6.2V13l-4 2V8.2z"/></svg></summary>
+            <form method="get" class="col-filter-popover">
+              <input type="hidden" name="category" value="{{ selected_category }}">
+              <input type="hidden" name="variety" value="{{ variety_query }}">
+              <input type="hidden" name="design_category" value="{{ selected_design_category }}">
+              <input type="hidden" name="on_hand_min" value="{{ on_hand_min }}">
+              <input type="hidden" name="avg_cost_min" value="{{ avg_cost_min }}">
+              <input type="hidden" name="sort" value="{{ current_sort }}">
+              <input type="text" name="color" value="{{ color_query }}" placeholder="Contains…">
+              <button type="submit" class="btn">Apply</button>
+            </form>
+          </details>
+        </th>
+        <th>
+          <a href="{{ sort_urls.design_category }}">Design category {{ sort_indicators.design_category }}</a>
+          <details class="col-filter">
+            <summary class="filter-btn {% if selected_design_category %}filter-btn-active{% endif %}" title="Filter Design category"><svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h14l-5 6.2V13l-4 2V8.2z"/></svg></summary>
+            <form method="get" class="col-filter-popover">
+              <input type="hidden" name="category" value="{{ selected_category }}">
+              <input type="hidden" name="variety" value="{{ variety_query }}">
+              <input type="hidden" name="on_hand_min" value="{{ on_hand_min }}">
+              <input type="hidden" name="avg_cost_min" value="{{ avg_cost_min }}">
+              <input type="hidden" name="color" value="{{ color_query }}">
+              <input type="hidden" name="sort" value="{{ current_sort }}">
+              <select name="design_category">
+                <option value="">All</option>
+                {% for value, label in design_category_choices %}
+                  <option value="{{ value }}" {% if selected_design_category == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn">Apply</button>
+            </form>
+          </details>
+        </th>
+        <th>
+          <a href="{{ sort_urls.on_hand }}">On hand {{ sort_indicators.on_hand }}</a>
+          <details class="col-filter">
+            <summary class="filter-btn {% if on_hand_min %}filter-btn-active{% endif %}" title="Filter On hand"><svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h14l-5 6.2V13l-4 2V8.2z"/></svg></summary>
+            <form method="get" class="col-filter-popover">
+              <input type="hidden" name="category" value="{{ selected_category }}">
+              <input type="hidden" name="variety" value="{{ variety_query }}">
+              <input type="hidden" name="design_category" value="{{ selected_design_category }}">
+              <input type="hidden" name="avg_cost_min" value="{{ avg_cost_min }}">
+              <input type="hidden" name="color" value="{{ color_query }}">
+              <input type="hidden" name="sort" value="{{ current_sort }}">
+              <label>At least</label>
+              <input type="number" step="1" min="0" name="on_hand_min" value="{{ on_hand_min }}">
+              <button type="submit" class="btn">Apply</button>
+            </form>
+          </details>
+        </th>
+        <th>
+          <a href="{{ sort_urls.avg_cost }}">Avg cost {{ sort_indicators.avg_cost }}</a>
+          <details class="col-filter">
+            <summary class="filter-btn {% if avg_cost_min %}filter-btn-active{% endif %}" title="Filter Avg cost"><svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 2h14l-5 6.2V13l-4 2V8.2z"/></svg></summary>
+            <form method="get" class="col-filter-popover">
+              <input type="hidden" name="category" value="{{ selected_category }}">
+              <input type="hidden" name="variety" value="{{ variety_query }}">
+              <input type="hidden" name="design_category" value="{{ selected_design_category }}">
+              <input type="hidden" name="on_hand_min" value="{{ on_hand_min }}">
+              <input type="hidden" name="color" value="{{ color_query }}">
+              <input type="hidden" name="sort" value="{{ current_sort }}">
+              <label>At least $</label>
+              <input type="number" step="0.01" min="0" name="avg_cost_min" value="{{ avg_cost_min }}">
+              <button type="submit" class="btn">Apply</button>
+            </form>
+          </details>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in variety_rows %}
+      <tr>
+        <td>{{ row.variety.category }}</td>
+        <td>{{ row.variety.name }}</td>
+        <td>
+          <div class="swatch-row">
+            {% for flower in row.flowers %}
+              <a class="color-splotch" href="{% url 'flower-detail' flower.pk %}"
+                 title="{{ flower.color }} — {{ flower.get_design_category_display }}"
+                 style="background: {{ flower.swatch_background }};"></a>
+            {% endfor %}
+          </div>
+        </td>
+        <td>{{ row.design_categories }}</td>
+        <td>{{ row.total_on_hand }}</td>
+        <td>${{ row.avg_cost|floatformat:2 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="muted">No flowers match. <a href="{% url 'flower-add' %}" hx-get="{% url 'flower-add' %}" hx-target="#modal-root" hx-swap="innerHTML">Add one</a>.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

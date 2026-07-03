@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Inventory — TreBlooms{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;">
+  <h1>Inventory</h1>
+  <a class="btn" href="{% url 'inventory-add' %}">+ Add Inventory</a>
+</div>
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Flower</th>
+        <th>Design category</th>
+        <th>On hand</th>
+        <th>Avg per-stem cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for flower in flowers %}
+      <tr>
+        <td>
+          {% if flower.image %}
+            <img src="{{ flower.image.url }}" alt="" class="flower-thumb">
+          {% endif %}
+        </td>
+        <td><a href="{% url 'flower-detail' flower.pk %}">{{ flower }}</a></td>
+        <td>{{ flower.get_design_category_display }}</td>
+        <td>{{ flower.quantity_on_hand }}</td>
+        <td>${{ flower.current_avg_cost|floatformat:2 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="muted">No flowers in the taxonomy yet. Add some in the <a href="{% url 'admin:index' %}">admin</a>, then add inventory.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
