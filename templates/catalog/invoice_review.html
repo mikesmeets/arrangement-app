@@ -24,7 +24,8 @@
       {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
     {% endfor %}
     <p class="muted">Take a photo of the invoice or upload a PDF and Claude will try to read the vendor and line items automatically.</p>
-    <button type="submit" class="btn" name="extract_file" value="1" style="margin-top:1rem;">Extract Invoice</button>
+    <button type="submit" class="btn" name="extract_file" value="1" style="margin-top:1rem;"
+            {% if invoice.line_items.exists %}onclick="return confirm('This invoice already has {{ invoice.line_items.count }} line item(s). Extracting again ADDS another set below (possible duplicates) — it does not replace them. Continue?');"{% endif %}>Extract Invoice</button>
   </form>
 </div>
 
