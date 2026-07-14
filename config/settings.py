@@ -125,10 +125,9 @@ STORAGES = {
 }
 
 # Media files (invoice photos, arrangement photos)
-# NOTE: FileSystemStorage above is a local-dev default. Railway's filesystem is
-# ephemeral across deploys, so before shipping Phase 2 (invoice photo uploads)
-# swap the "default" backend to an S3-compatible bucket via django-storages
-# (see plan doc, "DevOps" section) rather than relying on local disk in production.
+# NOTE: FileSystemStorage above requires a Railway Volume mounted at MEDIA_ROOT
+# in production — Railway's filesystem is otherwise ephemeral across deploys and
+# uploaded files would be lost. Mount the volume at /app/media on the web service.
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 

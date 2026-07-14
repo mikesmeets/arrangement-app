@@ -1,4 +1,5 @@
 import base64
+import mimetypes
 from decimal import Decimal, InvalidOperation
 
 import anthropic
@@ -38,10 +39,25 @@ class _Invoice(BaseModel):
     line_items: list[_LineItem]
 
 
+def _media_type_for(f):
+    # A fresh request upload (UploadedFile) exposes content_type, but a saved
+    # FieldFile does not — so fall back to guessing from the file name. Browser
+    # content_type is also often a generic octet-stream, so prefer the extension.
+    content_type = getattr(f, "content_type", None)
+    if not content_type or content_type == "application/octet-stream":
+        guessed, _ = mimetypes.guess_type(f.name)
+        content_type = guessed or content_type
+    return content_type or "image/jpeg"
+
+
 def _content_block(uploaded_file):
-    uploaded_file.seek(0)
-    data = base64.standard_b64encode(uploaded_file.read()).decode("utf-8")
-    media_type = uploaded_file.content_type or "image/jpeg"
+    media_type = _media_type_for(uploaded_file)
+    uploaded_file.open("rb")
+    try:
+        raw = uploaded_file.read()
+    finally:
+        uploaded_file.close()
+    data = base64.standard_b64encode(raw).decode("utf-8")
     if media_type == "application/pdf":
         return {
             "type": "document",
