@@ -1,0 +1,16 @@
+<tr class="line-item-row">
+  <td>{{ line_form.id }}{{ line_form.name }}</td>
+  <td>{{ line_form.quantity }}</td>
+  <td>{{ line_form.total_cost }}</td>
+  <td>{% if line_form.instance.pk %}${{ line_form.instance.per_stem_cost }}{% else %}<span class="muted">—</span>{% endif %}</td>
+  <td>
+    {{ line_form.flower }}
+    {% if line_form.errors %}<ul class="errorlist">{% for field, errs in line_form.errors.items %}{% for e in errs %}<li>{{ e }}</li>{% endfor %}{% endfor %}</ul>{% endif %}
+  </td>
+  <td>{{ line_form.size }}</td>
+  <td>{{ line_form.grade }}</td>
+  <td class="line-item-delete">
+    {{ line_form.DELETE }}
+    <button type="button" class="row-delete-btn" title="Remove row" aria-label="Remove row">&times;</button>
+  </td>
+</tr>

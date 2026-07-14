@@ -193,6 +193,18 @@
       border-radius: 8px;
     }
     embed.invoice-preview { width: 100%; height: 480px; }
+    .line-item-delete { text-align: center; white-space: nowrap; }
+    .line-item-delete input[type="checkbox"] { display: none; }
+    .row-delete-btn {
+      border: none;
+      background: transparent;
+      color: #b23a3a;
+      font-size: 1.3rem;
+      line-height: 1;
+      padding: 0 0.3rem;
+      cursor: pointer;
+    }
+    .row-delete-btn:hover { color: #7a1f1f; }
   </style>
   {% block extra_head %}{% endblock %}
 </head>

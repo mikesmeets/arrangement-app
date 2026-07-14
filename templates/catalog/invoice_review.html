@@ -81,31 +81,73 @@
           <th>Flower</th>
           <th>Size</th>
           <th>Grade</th>
+          <th></th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="line-items-body">
         {% for line_form in formset %}
-        <tr>
-          {{ line_form.id }}
-          <td>{{ line_form.name }}</td>
-          <td>{{ line_form.quantity }}</td>
-          <td>{{ line_form.total_cost }}</td>
-          <td>
-            {% if line_form.instance.pk %}${{ line_form.instance.per_stem_cost }}{% else %}<span class="muted">—</span>{% endif %}
-          </td>
-          <td>
-            {{ line_form.flower }}
-            {% if line_form.errors %}<ul class="errorlist">{% for field, errs in line_form.errors.items %}{% for e in errs %}<li>{{ e }}</li>{% endfor %}{% endfor %}</ul>{% endif %}
-          </td>
-          <td>{{ line_form.size }}</td>
-          <td>{{ line_form.grade }}</td>
-        </tr>
+          {% include "catalog/_line_item_row.html" %}
         {% endfor %}
       </tbody>
     </table>
-    <p class="muted">Per-stem cost is calculated automatically from total cost &divide; qty once you save. The blank rows at the bottom are for adding line items by hand — fill in name, quantity, and total cost to add a new one. Leave "Flower" blank on any row to skip it — it won't be added to inventory. Don't see the right flower? Use the "+ Add Flower" button above — it'll show up in the dropdowns here automatically.</p>
+    <script type="text/template" id="empty-line-item-row">{% with line_form=formset.empty_form %}{% include "catalog/_line_item_row.html" %}{% endwith %}</script>
+    <p class="muted">Fill in a row's name, quantity, and total cost — a fresh blank row appears as you go. Use the &times; to drop a row. Per-stem cost is calculated from total cost &divide; qty once you save. Leave "Flower" blank on a row to skip adding it to inventory. Don't see the right flower? Use the "+ Add Flower" button above.</p>
     <button type="submit" class="btn" name="confirm" value="1" style="margin-top:1rem;">Confirm &amp; Add to Inventory</button>
     <a class="btn btn-secondary" href="{% url 'invoice-list' %}">Cancel</a>
   </form>
 </div>
+
+<script>
+  (function () {
+    var body = document.getElementById('line-items-body');
+    if (!body) return;
+    var totalForms = document.getElementById('id_form-TOTAL_FORMS');
+    var tpl = document.getElementById('empty-line-item-row');
+
+    function visibleRows() {
+      return Array.prototype.filter.call(
+        body.querySelectorAll('tr.line-item-row'),
+        function (r) { return r.style.display !== 'none'; }
+      );
+    }
+
+    function rowHasContent(row) {
+      return Array.prototype.some.call(row.querySelectorAll('input, select'), function (el) {
+        return el.type !== 'checkbox' && el.type !== 'hidden' && el.value.trim() !== '';
+      });
+    }
+
+    function addBlankRow() {
+      var idx = parseInt(totalForms.value, 10);
+      var html = tpl.innerHTML.replace(/__prefix__/g, idx);
+      var holder = document.createElement('tbody');
+      holder.innerHTML = html.trim();
+      body.appendChild(holder.querySelector('tr'));
+      totalForms.value = idx + 1;
+    }
+
+    // Typing into the last row spawns a new blank one, so there's always a
+    // single empty row waiting at the bottom.
+    function maybeGrow(e) {
+      var row = e.target.closest('tr.line-item-row');
+      if (!row) return;
+      var rows = visibleRows();
+      if (row === rows[rows.length - 1] && rowHasContent(row)) addBlankRow();
+    }
+    body.addEventListener('input', maybeGrow);
+    body.addEventListener('change', maybeGrow);
+
+    // The × marks a row for deletion (server drops saved rows on save) and
+    // hides it. Never leave zero blank rows behind.
+    body.addEventListener('click', function (e) {
+      var btn = e.target.closest('.row-delete-btn');
+      if (!btn) return;
+      var row = btn.closest('tr.line-item-row');
+      var del = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+      if (del) del.checked = true;
+      row.style.display = 'none';
+      if (visibleRows().length === 0) addBlankRow();
+    });
+  })();
+</script>
 {% endblock %}

@@ -362,7 +362,8 @@ def _run_extraction(invoice):
 InvoiceLineItemFormSet = modelformset_factory(
     InvoiceLineItem,
     fields=["name", "quantity", "total_cost", "flower", "size", "grade"],
-    extra=3,
+    extra=1,
+    can_delete=True,
 )
 
 
@@ -419,6 +420,8 @@ def invoice_review(request, pk):
             messages.error(request, "Pick a vendor before confirming.")
         elif formset.is_valid():
             new_and_changed = formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
             for line_item in new_and_changed:
                 line_item.invoice = invoice
                 line_item.save()
