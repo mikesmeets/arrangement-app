@@ -167,6 +167,10 @@ LOGIN_REDIRECT_URL = "arrangement-list"
 LOGOUT_REDIRECT_URL = "login"
 
 if not DEBUG:
+    # Railway terminates TLS at its edge and forwards to the app over plain
+    # HTTP, so trust its X-Forwarded-Proto header — otherwise SECURE_SSL_REDIRECT
+    # never sees a "secure" request and loops forever (ERR_TOO_MANY_REDIRECTS).
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
