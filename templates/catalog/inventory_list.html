@@ -5,34 +5,43 @@
   <h1>Inventory</h1>
   <a class="btn" href="{% url 'inventory-add' %}">+ Add Inventory</a>
 </div>
+
+{% for row in vendor_rows %}
 <div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;">
+    <h2 style="margin:0;">{{ row.vendor.name }}</h2>
+    <span class="muted">{{ row.total_on_hand }} stems on hand</span>
+  </div>
   <table>
     <thead>
       <tr>
-        <th></th>
+        <th>Product name</th>
         <th>Flower</th>
-        <th>Design category</th>
+        <th>Size</th>
+        <th>Grade</th>
         <th>On hand</th>
-        <th>Avg per-stem cost</th>
+        <th>Per-stem cost</th>
+        <th>Received</th>
       </tr>
     </thead>
     <tbody>
-      {% for flower in flowers %}
+      {% for item in row.items %}
       <tr>
-        <td>
-          {% if flower.image %}
-            <img src="{{ flower.image.url }}" alt="" class="flower-thumb">
-          {% endif %}
-        </td>
-        <td><a href="{% url 'flower-detail' flower.pk %}">{{ flower }}</a></td>
-        <td>{{ flower.get_design_category_display }}</td>
-        <td>{{ flower.quantity_on_hand }}</td>
-        <td>${{ flower.current_avg_cost|floatformat:2 }}</td>
+        <td>{{ item.name }}</td>
+        <td><a href="{% url 'flower-detail' item.flower.pk %}">{{ item.flower }}</a></td>
+        <td>{{ item.size|default:"—" }}</td>
+        <td>{{ item.grade|default:"—" }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>${{ item.per_stem_cost|floatformat:2 }}</td>
+        <td>{{ item.date_received }}</td>
       </tr>
-      {% empty %}
-      <tr><td colspan="5" class="muted">No flowers in the taxonomy yet. Add some in the <a href="{% url 'admin:index' %}">admin</a>, then add inventory.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+{% empty %}
+<div class="card">
+  <p class="muted">No inventory yet. Confirm an invoice to add stock, or <a href="{% url 'inventory-add' %}">add inventory by hand</a>.</p>
+</div>
+{% endfor %}
 {% endblock %}

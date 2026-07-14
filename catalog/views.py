@@ -16,8 +16,20 @@ from .thumbnails import render_thumbnail
 
 @login_required
 def inventory_list(request):
-    flowers = Flower.objects.select_related("category", "variety").all()
-    return render(request, "catalog/inventory_list.html", {"flowers": flowers})
+    items = (
+        InventoryItem.objects.select_related(
+            "vendor", "flower__variety", "flower__category"
+        ).order_by("vendor__name", "-date_received", "name")
+    )
+    vendor_rows = []
+    current = None
+    for item in items:
+        if current is None or current["vendor"] != item.vendor:
+            current = {"vendor": item.vendor, "items": [], "total_on_hand": 0}
+            vendor_rows.append(current)
+        current["items"].append(item)
+        current["total_on_hand"] += item.quantity
+    return render(request, "catalog/inventory_list.html", {"vendor_rows": vendor_rows})
 
 
 @login_required

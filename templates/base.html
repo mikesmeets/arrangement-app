@@ -205,6 +205,29 @@
       cursor: pointer;
     }
     .row-delete-btn:hover { color: #7a1f1f; }
+    .invoice-group {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+    .invoice-group > summary {
+      cursor: pointer;
+      padding: 0.6rem 0.75rem;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+    .invoice-group > summary::-webkit-details-marker { display: none; }
+    .invoice-group > summary::before {
+      content: "\25B8";
+      color: var(--pink-dark);
+      transition: transform 0.15s;
+    }
+    .invoice-group[open] > summary::before { content: "\25BE"; }
+    .invoice-group[open] > summary { border-bottom: 1px solid var(--border); }
+    .invoice-group .flower-grid { padding: 0.75rem; margin-bottom: 0; }
   </style>
   {% block extra_head %}{% endblock %}
 </head>

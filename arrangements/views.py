@@ -4,10 +4,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from catalog.models import Flower
+from catalog.models import Invoice
 
 from .forms import ArrangementForm
 from .models import Arrangement, ArrangementItem
+
+RECENT_INVOICE_LIMIT = 10
 
 
 @login_required
@@ -33,12 +35,38 @@ def arrangement_edit(request, pk):
             return redirect("arrangement-edit", pk=arrangement.pk)
     else:
         form = ArrangementForm(instance=arrangement)
-    flowers = Flower.objects.select_related("category", "variety")
     return render(
         request,
         "arrangements/arrangement_edit.html",
-        {"arrangement": arrangement, "form": form, "flowers": flowers},
+        {
+            "arrangement": arrangement,
+            "form": form,
+            "invoice_rows": _recent_invoice_flowers(),
+        },
     )
+
+
+def _recent_invoice_flowers():
+    """Recent invoices paired with the distinct mapped flowers on each, for the
+    invoice-based flower picker in the arrangement builder."""
+    invoices = (
+        Invoice.objects.select_related("vendor")
+        .prefetch_related("line_items__flower__variety", "line_items__flower__category")
+        .order_by("-date", "-created_at")
+    )
+    rows = []
+    for invoice in invoices:
+        flowers = []
+        seen = set()
+        for line_item in invoice.line_items.all():
+            if line_item.flower_id and line_item.flower_id not in seen:
+                seen.add(line_item.flower_id)
+                flowers.append(line_item.flower)
+        if flowers:
+            rows.append({"invoice": invoice, "flowers": flowers})
+        if len(rows) >= RECENT_INVOICE_LIMIT:
+            break
+    return rows
 
 
 def _items_response(request, arrangement):
