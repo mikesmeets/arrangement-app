@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Vendors — TreBlooms{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;">
+  <h1>Vendors</h1>
+  <button type="button" class="btn" hx-get="{% url 'vendor-add' %}" hx-target="#modal-root" hx-swap="innerHTML">+ Add Vendor</button>
+</div>
+
+<div class="card" id="vendor-table-card"
+     hx-get="{% url 'vendor-list' %}"
+     hx-trigger="vendor-added from:body"
+     hx-select="#vendor-table-card"
+     hx-target="this"
+     hx-swap="outerHTML">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Contact</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>Website</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for vendor in vendors %}
+      <tr>
+        <td>{{ vendor.name }}</td>
+        <td>{{ vendor.contact_name|default:"—" }}</td>
+        <td>{{ vendor.phone|default:"—" }}</td>
+        <td>{% if vendor.email %}<a href="mailto:{{ vendor.email }}">{{ vendor.email }}</a>{% else %}—{% endif %}</td>
+        <td>{% if vendor.website %}<a href="{{ vendor.website }}" target="_blank" rel="noopener">{{ vendor.website }}</a>{% else %}—{% endif %}</td>
+        <td><a class="btn btn-secondary" href="{% url 'vendor-edit' vendor.pk %}">Edit</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="muted">No vendors yet. <a href="{% url 'vendor-add' %}" hx-get="{% url 'vendor-add' %}" hx-target="#modal-root" hx-swap="innerHTML">Add one</a>.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

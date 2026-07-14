@@ -99,6 +99,7 @@ class Vendor(models.Model):
     contact_name = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)
+    website = models.URLField(blank=True, default="")
     address = models.TextField(blank=True)
     notes = models.TextField(blank=True)
 

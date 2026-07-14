@@ -11,7 +11,7 @@
       {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
     {% endfor %}
     <button type="submit" class="btn" style="margin-top:1rem;">Save</button>
-    <a class="btn btn-secondary" href="{% url 'invoice-list' %}">Cancel</a>
+    <a class="btn btn-secondary" href="{% url 'vendor-list' %}">Cancel</a>
   </form>
 </div>
 {% endblock %}

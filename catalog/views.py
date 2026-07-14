@@ -47,11 +47,35 @@ def vendor_add(request):
                 )
                 return response
             messages.success(request, "Vendor added.")
-            return redirect("invoice-list")
+            return redirect("vendor-list")
     else:
         form = VendorForm(initial={"name": request.GET.get("name", "").strip()})
     template = "catalog/_vendor_form_modal.html" if is_modal else "catalog/vendor_form.html"
     return render(request, template, {"form": form, "title": "Add Vendor"})
+
+
+@login_required
+def vendor_list(request):
+    vendors = Vendor.objects.all()
+    return render(request, "catalog/vendor_list.html", {"vendors": vendors})
+
+
+@login_required
+def vendor_edit(request, pk):
+    vendor = get_object_or_404(Vendor, pk=pk)
+    if request.method == "POST":
+        form = VendorForm(request.POST, instance=vendor)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Vendor updated.")
+            return redirect("vendor-list")
+    else:
+        form = VendorForm(instance=vendor)
+    return render(
+        request,
+        "catalog/vendor_form.html",
+        {"form": form, "title": "Edit Vendor", "vendor": vendor},
+    )
 
 
 @login_required

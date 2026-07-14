@@ -40,7 +40,7 @@ class FlowerAdmin(admin.ModelAdmin):
 
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):
-    list_display = ["name", "contact_name", "phone", "email"]
+    list_display = ["name", "contact_name", "phone", "email", "website"]
     search_fields = ["name", "contact_name"]
 
 
