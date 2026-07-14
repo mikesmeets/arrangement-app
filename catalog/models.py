@@ -120,6 +120,7 @@ class Invoice(models.Model):
     vendor = models.ForeignKey(
         Vendor, on_delete=models.PROTECT, related_name="invoices", null=True, blank=True
     )
+    vendor_invoice_number = models.CharField(max_length=100, blank=True, default="")
     date = models.DateField(default=timezone.now)
     file = models.FileField(upload_to="invoices/%Y/%m/", blank=True, null=True)
     raw_extracted_data = models.JSONField(blank=True, null=True)

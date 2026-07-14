@@ -30,7 +30,10 @@ class VendorForm(forms.ModelForm):
 class InvoiceForm(forms.ModelForm):
     class Meta:
         model = Invoice
-        fields = ["vendor", "date"]
+        fields = ["vendor", "vendor_invoice_number", "date"]
+        labels = {
+            "vendor_invoice_number": "Vendor invoice #",
+        }
         widgets = {
             "date": forms.DateInput(attrs={"type": "date"}),
         }

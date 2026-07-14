@@ -17,6 +17,7 @@ class ParsedLineItem:
 @dataclass
 class ParsedInvoice:
     vendor_name: str = ""
+    invoice_number: str = ""
     date: str = ""
     line_items: list = field(default_factory=list)
     error: Optional[str] = None

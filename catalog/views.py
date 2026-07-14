@@ -280,6 +280,7 @@ def _run_extraction(invoice):
     result = parse_invoice(invoice.file)
     invoice.raw_extracted_data = {
         "vendor_name": result.vendor_name,
+        "invoice_number": result.invoice_number,
         "date": result.date,
         "line_items": [
             {
@@ -293,6 +294,10 @@ def _run_extraction(invoice):
         ],
         "error": result.error,
     }
+    # Auto-fill the vendor invoice number (a plain string, no matching needed)
+    # without clobbering anything already entered by hand.
+    if result.invoice_number and not invoice.vendor_invoice_number:
+        invoice.vendor_invoice_number = result.invoice_number
     invoice.save()
     return result
 

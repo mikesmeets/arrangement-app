@@ -2,7 +2,7 @@
 {% block title %}{{ invoice.vendor|default:"New Invoice" }} — TreBlooms{% endblock %}
 {% block content %}
 <h1>{{ invoice.vendor|default:"New Invoice" }}</h1>
-<p class="muted">{{ invoice.date }} &middot; {{ invoice.get_status_display }}</p>
+<p class="muted">{% if invoice.vendor_invoice_number %}Invoice #{{ invoice.vendor_invoice_number }} &middot; {% endif %}{{ invoice.date }} &middot; {{ invoice.get_status_display }}</p>
 
 <div class="card">
   <h2>Invoice File</h2>
@@ -43,7 +43,7 @@
 </div>
 {% elif invoice.raw_extracted_data.vendor_name %}
 <div class="card">
-  <p class="muted">Claude read the vendor on the invoice as "{{ invoice.raw_extracted_data.vendor_name }}"{% if invoice.raw_extracted_data.date %} dated {{ invoice.raw_extracted_data.date }}{% endif %}.</p>
+  <p class="muted">Claude read the vendor on the invoice as "{{ invoice.raw_extracted_data.vendor_name }}"{% if invoice.raw_extracted_data.invoice_number %}, invoice #{{ invoice.raw_extracted_data.invoice_number }}{% endif %}{% if invoice.raw_extracted_data.date %}, dated {{ invoice.raw_extracted_data.date }}{% endif %}.</p>
 </div>
 {% endif %}
 

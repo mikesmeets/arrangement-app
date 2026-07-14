@@ -12,6 +12,8 @@ MODEL = "claude-opus-4-8"
 
 PROMPT = (
     "This is a photo or scan of a flower wholesaler invoice. Extract the vendor's name, "
+    "the vendor's invoice number (the invoice/document number the vendor printed on it, "
+    "often labeled 'Invoice #', 'Invoice No.', or similar; empty string if not shown), "
     "the invoice date (YYYY-MM-DD if you can determine it, otherwise an empty string), "
     "and every line item on the invoice.\n\n"
     "For each line item:\n"
@@ -35,6 +37,7 @@ class _LineItem(BaseModel):
 
 class _Invoice(BaseModel):
     vendor_name: str
+    invoice_number: str
     date: str
     line_items: list[_LineItem]
 
@@ -108,6 +111,7 @@ def parse(uploaded_file) -> ParsedInvoice:
         )
     return ParsedInvoice(
         vendor_name=parsed.vendor_name.strip(),
+        invoice_number=parsed.invoice_number.strip(),
         date=parsed.date.strip(),
         line_items=line_items,
     )
