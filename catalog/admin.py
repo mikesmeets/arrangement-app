@@ -40,8 +40,8 @@ class FlowerAdmin(admin.ModelAdmin):
 
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):
-    list_display = ["name", "contact_name", "phone", "email", "website"]
-    search_fields = ["name", "contact_name"]
+    list_display = ["name", "abbreviation", "contact_name", "phone", "email", "website"]
+    search_fields = ["name", "abbreviation", "contact_name"]
 
 
 class InvoiceLineItemInline(admin.TabularInline):

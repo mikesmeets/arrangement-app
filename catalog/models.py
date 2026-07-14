@@ -96,6 +96,9 @@ class Flower(models.Model):
 
 class Vendor(models.Model):
     name = models.CharField(max_length=150, unique=True)
+    abbreviation = models.CharField(
+        max_length=12, blank=True, default="", help_text="Short code shown before product names, e.g. MAY"
+    )
     contact_name = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)

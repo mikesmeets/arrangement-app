@@ -24,7 +24,8 @@ class InventoryItemForm(forms.ModelForm):
 class VendorForm(forms.ModelForm):
     class Meta:
         model = Vendor
-        fields = ["name", "contact_name", "phone", "email", "website", "address", "notes"]
+        fields = ["name", "abbreviation", "contact_name", "phone", "email", "website", "address", "notes"]
+        labels = {"abbreviation": "Abbreviation"}
 
 
 class InvoiceForm(forms.ModelForm):
