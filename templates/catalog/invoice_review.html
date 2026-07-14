@@ -7,6 +7,13 @@
 <div class="card">
   <h2>Invoice File</h2>
   {% if invoice.file %}
+    {% if invoice.file_is_pdf %}
+      <embed src="{{ invoice.file.url }}" type="application/pdf" class="invoice-preview" />
+    {% else %}
+      <a href="{{ invoice.file.url }}" target="_blank" rel="noopener">
+        <img src="{{ invoice.file.url }}" alt="Uploaded invoice" class="invoice-preview" />
+      </a>
+    {% endif %}
     <p class="muted">Current file: {{ invoice.file.name }}. Uploading a new one will run extraction again and add more line items below.</p>
   {% endif %}
   <form method="post" enctype="multipart/form-data">

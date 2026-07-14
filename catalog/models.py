@@ -144,6 +144,10 @@ class Invoice(models.Model):
             total += item.total_cost
         return total
 
+    @property
+    def file_is_pdf(self):
+        return bool(self.file) and self.file.name.lower().endswith(".pdf")
+
 
 class InvoiceLineItem(models.Model):
     invoice = models.ForeignKey(
