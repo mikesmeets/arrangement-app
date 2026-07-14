@@ -47,8 +47,9 @@ def arrangement_edit(request, pk):
 
 
 def _recent_invoice_flowers():
-    """Recent invoices paired with the distinct mapped flowers on each, for the
-    invoice-based flower picker in the arrangement builder."""
+    """Recent invoices paired with their mapped line items, for the invoice-based
+    flower picker in the arrangement builder. Each button is labelled with the
+    vendor's product name (the line item), and adds the flower it maps to."""
     invoices = (
         Invoice.objects.select_related("vendor")
         .prefetch_related("line_items__flower__variety", "line_items__flower__category")
@@ -56,14 +57,9 @@ def _recent_invoice_flowers():
     )
     rows = []
     for invoice in invoices:
-        flowers = []
-        seen = set()
-        for line_item in invoice.line_items.all():
-            if line_item.flower_id and line_item.flower_id not in seen:
-                seen.add(line_item.flower_id)
-                flowers.append(line_item.flower)
-        if flowers:
-            rows.append({"invoice": invoice, "flowers": flowers})
+        line_items = [li for li in invoice.line_items.all() if li.flower_id]
+        if line_items:
+            rows.append({"invoice": invoice, "line_items": line_items})
         if len(rows) >= RECENT_INVOICE_LIMIT:
             break
     return rows

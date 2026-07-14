@@ -27,21 +27,21 @@
     <details class="invoice-group" {% if forloop.first %}open{% endif %}>
       <summary>
         <strong>{{ row.invoice.vendor|default:"Unknown vendor" }}</strong>
-        <span class="muted">{{ row.invoice.date }}{% if row.invoice.vendor_invoice_number %} &middot; #{{ row.invoice.vendor_invoice_number }}{% endif %} &middot; {{ row.flowers|length }} flower{{ row.flowers|length|pluralize }}</span>
+        <span class="muted">{{ row.invoice.date }}{% if row.invoice.vendor_invoice_number %} &middot; #{{ row.invoice.vendor_invoice_number }}{% endif %} &middot; {{ row.line_items|length }} item{{ row.line_items|length|pluralize }}</span>
       </summary>
       <div class="flower-grid">
-        {% for flower in row.flowers %}
+        {% for line_item in row.line_items %}
           <button type="button"
-                  class="flower-btn design-{{ flower.design_category }}"
+                  class="flower-btn design-{{ line_item.flower.design_category }}"
                   hx-post="{% url 'arrangement-add-item' arrangement.pk %}"
-                  hx-vals='{"flower": "{{ flower.id }}", "quantity": 1}'
+                  hx-vals='{"flower": "{{ line_item.flower.id }}", "quantity": 1}'
                   hx-target="#items-and-price"
                   hx-swap="outerHTML">
-            {% if flower.image %}
-              <img src="{{ flower.image.url }}" alt="" class="flower-thumb">
+            {% if line_item.flower.image %}
+              <img src="{{ line_item.flower.image.url }}" alt="" class="flower-thumb">
             {% endif %}
-            <span class="flower-btn-name">{{ flower.variety.name }} {{ flower.color }}</span>
-            <span class="flower-btn-meta">{{ flower.get_design_category_display }}</span>
+            <span class="flower-btn-name">{{ line_item.name }}</span>
+            <span class="flower-btn-meta">{{ line_item.flower.variety.name }} {{ line_item.flower.color }}</span>
           </button>
         {% endfor %}
       </div>
