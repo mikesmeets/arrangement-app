@@ -125,11 +125,32 @@ STORAGES = {
 }
 
 # Media files (invoice photos, arrangement photos)
-# NOTE: FileSystemStorage above requires a Railway Volume mounted at MEDIA_ROOT
-# in production — Railway's filesystem is otherwise ephemeral across deploys and
-# uploaded files would be lost. Mount the volume at /app/media on the web service.
+# Local dev falls back to the FileSystemStorage above. In production, set the
+# AWS_* env vars below and media is stored in a private S3 bucket, served via
+# short-lived signed URLs. (Railway's own filesystem is ephemeral, so uploads
+# must not live on local disk in production.)
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
+if AWS_STORAGE_BUCKET_NAME:
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": AWS_STORAGE_BUCKET_NAME,
+            "region_name": env("AWS_S3_REGION_NAME", default="us-east-1"),
+            # Private objects served through expiring signed URLs.
+            "querystring_auth": True,
+            "querystring_expire": env.int("AWS_S3_URL_EXPIRE", default=3600),
+            "signature_version": "s3v4",
+            # Modern S3 buckets have ACLs disabled (bucket-owner-enforced), so
+            # don't send an ACL — access is governed by the bucket policy/IAM.
+            "default_acl": None,
+            # Don't silently overwrite two uploads that share a name.
+            "file_overwrite": False,
+        },
+    }
+    # boto3 reads AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY from the environment.
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
