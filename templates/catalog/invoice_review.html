@@ -42,8 +42,17 @@
   <p>Automatic extraction didn't run: {{ invoice.raw_extracted_data.error }}</p>
 </div>
 {% elif invoice.raw_extracted_data.vendor_name %}
-<div class="card">
-  <p class="muted">Claude read the vendor on the invoice as "{{ invoice.raw_extracted_data.vendor_name }}"{% if invoice.raw_extracted_data.invoice_number %}, invoice #{{ invoice.raw_extracted_data.invoice_number }}{% endif %}{% if invoice.raw_extracted_data.date %}, dated {{ invoice.raw_extracted_data.date }}{% endif %}.</p>
+<div class="card" id="extracted-vendor-note">
+  <p class="muted">Claude read this invoice as vendor "{{ invoice.raw_extracted_data.vendor_name }}"{% if invoice.raw_extracted_data.invoice_number %}, invoice #{{ invoice.raw_extracted_data.invoice_number }}{% endif %}{% if invoice.raw_extracted_data.date %}, dated {{ invoice.raw_extracted_data.date }}{% endif %}.</p>
+  {% if invoice.vendor %}
+  <p class="muted">Matched to <strong>{{ invoice.vendor }}</strong> in your vendor list — change it in Details if that's wrong.</p>
+  {% else %}
+  <p>That vendor isn't on file yet.
+    <button type="button" class="btn"
+            hx-get="{% url 'vendor-add' %}?name={{ invoice.raw_extracted_data.vendor_name|urlencode }}"
+            hx-target="#modal-root" hx-swap="innerHTML">Create "{{ invoice.raw_extracted_data.vendor_name }}"</button>
+  </p>
+  {% endif %}
 </div>
 {% endif %}
 

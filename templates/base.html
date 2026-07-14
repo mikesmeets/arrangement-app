@@ -212,23 +212,31 @@
   </main>
   <div id="modal-root"></div>
   <script>
-    function refreshSelectOptions(eventName, selector, optionsUrl) {
-      document.body.addEventListener(eventName, function () {
+    function refreshSelectOptions(eventName, selector, optionsUrl, selectNew) {
+      document.body.addEventListener(eventName, function (evt) {
         var selects = document.querySelectorAll(selector);
         if (!selects.length) return;
+        var newId = evt.detail && evt.detail.id ? String(evt.detail.id) : null;
         fetch(optionsUrl)
           .then(function (r) { return r.text(); })
           .then(function (html) {
             selects.forEach(function (select) {
               var current = select.value;
               select.innerHTML = html;
-              select.value = current;
+              // A freshly-added vendor is what the user wants selected; other
+              // selects (e.g. flowers) keep their existing choice.
+              select.value = (selectNew && newId) ? newId : current;
             });
           });
       });
     }
-    refreshSelectOptions('flower-added', 'select[name$="-flower"]', '{% url "flower-options" %}');
-    refreshSelectOptions('vendor-added', 'select[name="vendor"]', '{% url "vendor-options" %}');
+    refreshSelectOptions('flower-added', 'select[name$="-flower"]', '{% url "flower-options" %}', false);
+    refreshSelectOptions('vendor-added', 'select[name="vendor"]', '{% url "vendor-options" %}', true);
+    // Once the extracted vendor is created, drop the "not on file" prompt.
+    document.body.addEventListener('vendor-added', function () {
+      var note = document.getElementById('extracted-vendor-note');
+      if (note) note.remove();
+    });
   </script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+import datetime
 import json
 from decimal import Decimal, InvalidOperation
 
@@ -48,7 +49,7 @@ def vendor_add(request):
             messages.success(request, "Vendor added.")
             return redirect("invoice-list")
     else:
-        form = VendorForm()
+        form = VendorForm(initial={"name": request.GET.get("name", "").strip()})
     template = "catalog/_vendor_form_modal.html" if is_modal else "catalog/vendor_form.html"
     return render(request, template, {"form": form, "title": "Add Vendor"})
 
@@ -268,6 +269,26 @@ def _suggest_flower(name):
     return None
 
 
+def _suggest_vendor(name):
+    """Best-effort match of an extracted vendor name against existing vendors."""
+    name = (name or "").strip()
+    if not name:
+        return None
+    match = Vendor.objects.filter(name__iexact=name).first()
+    if match:
+        return match
+    match = Vendor.objects.filter(name__icontains=name).first()
+    if match:
+        return match
+    # The printed name may carry extra words (e.g. "Mayesh Wholesale" for a
+    # vendor saved as "Mayesh"), so also look for an on-file name inside it.
+    lowered = name.lower()
+    for vendor in Vendor.objects.all():
+        if vendor.name.lower() in lowered:
+            return vendor
+    return None
+
+
 @login_required
 def invoice_create(request):
     if request.method == "POST":
@@ -298,6 +319,18 @@ def _run_extraction(invoice):
     # without clobbering anything already entered by hand.
     if result.invoice_number and not invoice.vendor_invoice_number:
         invoice.vendor_invoice_number = result.invoice_number
+    # Pull the invoice date if Claude returned a parseable one.
+    if result.date:
+        try:
+            invoice.date = datetime.date.fromisoformat(result.date)
+        except ValueError:
+            pass
+    # Match the extracted vendor name to one on file (if any) and select it.
+    # When nothing matches, the review page offers a one-click "create vendor".
+    if not invoice.vendor_id:
+        matched = _suggest_vendor(result.vendor_name)
+        if matched:
+            invoice.vendor = matched
     invoice.save()
     return result
 
