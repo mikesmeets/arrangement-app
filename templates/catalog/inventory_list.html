@@ -24,7 +24,7 @@
     <tbody>
       {% for entry in row.products %}
       <tr>
-        <td>{{ entry.product.name }}</td>
+        <td>{{ entry.product.label }}</td>
         <td>{% if entry.product.flower %}<a href="{% url 'flower-detail' entry.product.flower.pk %}">{{ entry.product.flower }}</a>{% else %}<span class="muted">—</span>{% endif %}</td>
         <td>{{ entry.on_hand }}</td>
         <td>${{ entry.avg_cost|floatformat:2 }}</td>

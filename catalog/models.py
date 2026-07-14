@@ -139,7 +139,8 @@ class Product(models.Model):
     @property
     def label(self):
         """Vendor-abbreviated label, e.g. "MAY - Freedom Rose Red 50cm".
-        Computed on the fly — only shown in the arrangement maker."""
+        Computed on the fly (never stored) — shown in the inventory and
+        arrangement-maker screens."""
         prefix = self.vendor.abbreviation or self.vendor.name
         return f"{prefix} - {self.name}"
 
