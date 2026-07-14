@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from catalog.models import Invoice
+from catalog.models import Invoice, Product
 
 from .forms import ArrangementForm
 from .models import Arrangement, ArrangementItem
@@ -41,27 +41,52 @@ def arrangement_edit(request, pk):
         {
             "arrangement": arrangement,
             "form": form,
-            "invoice_rows": _recent_invoice_flowers(),
+            "invoice_rows": _recent_invoice_products(),
         },
     )
 
 
-def _recent_invoice_flowers():
-    """Recent invoices paired with their mapped line items, for the invoice-based
-    flower picker in the arrangement builder. Each button is labelled with the
-    vendor's product name (the line item), and adds the flower it maps to."""
+def _recent_invoice_products():
+    """Recent confirmed invoices paired with the distinct products received on
+    each, for the invoice-based picker in the arrangement builder. Buttons are
+    labelled with the product's vendor-abbreviated label. Products not sourced
+    from a recent invoice (e.g. seeded or manually-added stock) fall into a
+    per-vendor group so every product stays addable."""
     invoices = (
         Invoice.objects.select_related("vendor")
-        .prefetch_related("line_items__flower__variety", "line_items__flower__category")
+        .prefetch_related("inventory_items__product__vendor", "inventory_items__product__flower__variety")
+        .filter(inventory_items__isnull=False)
+        .distinct()
         .order_by("-date", "-created_at")
     )
     rows = []
+    surfaced = set()
     for invoice in invoices:
-        line_items = [li for li in invoice.line_items.all() if li.flower_id]
-        if line_items:
-            rows.append({"invoice": invoice, "line_items": line_items})
+        products = []
+        seen = set()
+        for inv_item in invoice.inventory_items.all():
+            product = inv_item.product
+            if product and product.id not in seen:
+                seen.add(product.id)
+                products.append(product)
+                surfaced.add(product.id)
+        if products:
+            rows.append({"invoice": invoice, "vendor": invoice.vendor, "products": products})
         if len(rows) >= RECENT_INVOICE_LIMIT:
             break
+
+    leftover = (
+        Product.objects.select_related("vendor", "flower__variety")
+        .exclude(id__in=surfaced)
+        .order_by("vendor__name", "name")
+    )
+    by_vendor = {}
+    for product in leftover:
+        by_vendor.setdefault(product.vendor_id, {"vendor": product.vendor, "products": []})
+        by_vendor[product.vendor_id]["products"].append(product)
+    for group in by_vendor.values():
+        rows.append({"invoice": None, "vendor": group["vendor"], "products": group["products"]})
+
     return rows
 
 
@@ -77,15 +102,15 @@ def _items_response(request, arrangement):
 def arrangement_add_item(request, pk):
     arrangement = get_object_or_404(Arrangement, pk=pk)
     if request.method == "POST":
-        flower_id = request.POST.get("flower")
+        product_id = request.POST.get("product")
         try:
             quantity = Decimal(request.POST.get("quantity") or "1")
         except InvalidOperation:
             quantity = Decimal("1")
-        if flower_id:
+        if product_id:
             item, created = ArrangementItem.objects.get_or_create(
                 arrangement=arrangement,
-                flower_id=flower_id,
+                product_id=product_id,
                 defaults={"quantity": quantity},
             )
             if not created:

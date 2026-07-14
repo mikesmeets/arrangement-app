@@ -10,26 +10,49 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import FlowerForm, InventoryItemForm, InvoiceFileForm, InvoiceForm, VendorForm
 from .invoice_parsing import parse_invoice
-from .models import Flower, FlowerCategory, InventoryItem, Invoice, InvoiceLineItem, Vendor
+from .models import (
+    Flower,
+    FlowerCategory,
+    InventoryItem,
+    Invoice,
+    InvoiceLineItem,
+    Product,
+    Vendor,
+)
 from .thumbnails import render_thumbnail
 
 
 @login_required
 def inventory_list(request):
-    items = (
-        InventoryItem.objects.select_related(
-            "vendor", "flower__variety", "flower__category"
-        ).order_by("vendor__name", "-date_received", "name")
+    products = (
+        Product.objects.select_related("vendor", "flower__variety", "flower__category")
+        .prefetch_related("inventory_items")
+        .order_by("vendor__name", "name")
     )
     vendor_rows = []
     current = None
-    for item in items:
-        if current is None or current["vendor"] != item.vendor:
-            current = {"vendor": item.vendor, "items": [], "total_on_hand": 0}
+    for product in products:
+        on_hand = product.quantity_on_hand
+        if current is None or current["vendor"] != product.vendor:
+            current = {"vendor": product.vendor, "products": [], "total_on_hand": 0}
             vendor_rows.append(current)
-        current["items"].append(item)
-        current["total_on_hand"] += item.quantity
+        current["products"].append(
+            {"product": product, "on_hand": on_hand, "avg_cost": product.current_avg_cost}
+        )
+        current["total_on_hand"] += on_hand
     return render(request, "catalog/inventory_list.html", {"vendor_rows": vendor_rows})
+
+
+def _product_for(vendor, name, flower=None):
+    """Get-or-create the vendor's Product for this name, keeping its optional
+    flower mapping current."""
+    product, _ = Product.objects.get_or_create(
+        vendor=vendor, name=name, defaults={"flower": flower}
+    )
+    if flower is not None and product.flower_id != flower.id:
+        product.flower = flower
+        product.save(update_fields=["flower"])
+    return product
 
 
 @login_required
@@ -37,7 +60,9 @@ def inventory_add(request):
     if request.method == "POST":
         form = InventoryItemForm(request.POST)
         if form.is_valid():
-            form.save()
+            item = form.save(commit=False)
+            item.product = _product_for(item.vendor, item.name, item.flower)
+            item.save()
             messages.success(request, "Inventory added.")
             return redirect("inventory-list")
     else:
@@ -439,26 +464,25 @@ def invoice_review(request, pk):
                 line_item.save()
             added = 0
             for line_item in invoice.line_items.select_related("flower"):
-                if line_item.flower_id:
-                    InventoryItem.objects.create(
-                        flower=line_item.flower,
-                        vendor=invoice.vendor,
-                        invoice=invoice,
-                        name=line_item.name,
-                        size=line_item.size,
-                        grade=line_item.grade,
-                        quantity=line_item.quantity,
-                        per_stem_cost=line_item.per_stem_cost,
-                        date_received=invoice.date,
-                    )
-                    added += 1
+                product = _product_for(invoice.vendor, line_item.name, line_item.flower)
+                InventoryItem.objects.create(
+                    product=product,
+                    flower=line_item.flower,
+                    vendor=invoice.vendor,
+                    invoice=invoice,
+                    name=line_item.name,
+                    size=line_item.size,
+                    grade=line_item.grade,
+                    quantity=line_item.quantity,
+                    per_stem_cost=line_item.per_stem_cost,
+                    date_received=invoice.date,
+                )
+                added += 1
             invoice.status = Invoice.STATUS_CONFIRMED
             invoice.save()
-            skipped = invoice.line_items.count() - added
-            summary = f"Confirmed. {added} item(s) added to inventory."
-            if skipped:
-                summary += f" {skipped} skipped (no flower selected)."
-            messages.success(request, summary)
+            messages.success(
+                request, f"Confirmed. {added} item(s) added to inventory."
+            )
             return redirect("inventory-list")
 
     else:

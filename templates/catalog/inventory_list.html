@@ -15,25 +15,19 @@
   <table>
     <thead>
       <tr>
-        <th>Product name</th>
-        <th>Flower</th>
-        <th>Size</th>
-        <th>Grade</th>
+        <th>Product</th>
+        <th>Flower (taxonomy)</th>
         <th>On hand</th>
-        <th>Per-stem cost</th>
-        <th>Received</th>
+        <th>Avg per-stem cost</th>
       </tr>
     </thead>
     <tbody>
-      {% for item in row.items %}
+      {% for entry in row.products %}
       <tr>
-        <td>{{ item.name }}</td>
-        <td><a href="{% url 'flower-detail' item.flower.pk %}">{{ item.flower }}</a></td>
-        <td>{{ item.size|default:"—" }}</td>
-        <td>{{ item.grade|default:"—" }}</td>
-        <td>{{ item.quantity }}</td>
-        <td>${{ item.per_stem_cost|floatformat:2 }}</td>
-        <td>{{ item.date_received }}</td>
+        <td>{{ entry.product.name }}</td>
+        <td>{% if entry.product.flower %}<a href="{% url 'flower-detail' entry.product.flower.pk %}">{{ entry.product.flower }}</a>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td>{{ entry.on_hand }}</td>
+        <td>${{ entry.avg_cost|floatformat:2 }}</td>
       </tr>
       {% endfor %}
     </tbody>

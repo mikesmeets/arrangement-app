@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import models
 from django.utils import timezone
 
-from catalog.models import Flower, GlobalSettings
+from catalog.models import Flower, GlobalSettings, Product
 
 
 class Arrangement(models.Model):
@@ -77,8 +77,8 @@ class Arrangement(models.Model):
     @property
     def flower_cost(self):
         total = Decimal("0.00")
-        for item in self.items.select_related("flower"):
-            total += item.flower.current_avg_cost * item.quantity
+        for item in self.items.select_related("product"):
+            total += item.product.current_avg_cost * item.quantity
         return total
 
     @property
@@ -110,18 +110,25 @@ class ArrangementItem(models.Model):
     arrangement = models.ForeignKey(
         Arrangement, on_delete=models.CASCADE, related_name="items"
     )
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, related_name="arrangement_items"
+    )
     flower = models.ForeignKey(
-        Flower, on_delete=models.PROTECT, related_name="arrangement_items"
+        Flower,
+        on_delete=models.PROTECT,
+        related_name="arrangement_items",
+        null=True,
+        blank=True,
     )
     quantity = models.DecimalField(max_digits=6, decimal_places=1, default=Decimal("1"))
 
     class Meta:
         ordering = ["id"]
-        unique_together = ("arrangement", "flower")
+        unique_together = ("arrangement", "product")
 
     def __str__(self):
-        return f"{self.flower} x{self.quantity}"
+        return f"{self.product} x{self.quantity}"
 
     @property
     def line_cost(self):
-        return self.flower.current_avg_cost * self.quantity
+        return self.product.current_avg_cost * self.quantity

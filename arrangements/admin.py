@@ -6,6 +6,7 @@ from .models import Arrangement, ArrangementItem
 class ArrangementItemInline(admin.TabularInline):
     model = ArrangementItem
     extra = 1
+    fields = ["product", "quantity"]
 
 
 @admin.register(Arrangement)

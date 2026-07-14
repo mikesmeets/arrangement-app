@@ -26,22 +26,22 @@
   {% for row in invoice_rows %}
     <details class="invoice-group" {% if forloop.first %}open{% endif %}>
       <summary>
-        <strong>{{ row.invoice.vendor|default:"Unknown vendor" }}</strong>
-        <span class="muted">{{ row.invoice.date }}{% if row.invoice.vendor_invoice_number %} &middot; #{{ row.invoice.vendor_invoice_number }}{% endif %} &middot; {{ row.line_items|length }} item{{ row.line_items|length|pluralize }}</span>
+        <strong>{{ row.vendor|default:"Unknown vendor" }}</strong>
+        <span class="muted">{% if row.invoice %}{{ row.invoice.date }}{% if row.invoice.vendor_invoice_number %} &middot; #{{ row.invoice.vendor_invoice_number }}{% endif %}{% else %}Direct / manual stock{% endif %} &middot; {{ row.products|length }} product{{ row.products|length|pluralize }}</span>
       </summary>
       <div class="flower-grid">
-        {% for line_item in row.line_items %}
+        {% for product in row.products %}
           <button type="button"
-                  class="flower-btn design-{{ line_item.flower.design_category }}"
+                  class="flower-btn{% if product.flower %} design-{{ product.flower.design_category }}{% endif %}"
                   hx-post="{% url 'arrangement-add-item' arrangement.pk %}"
-                  hx-vals='{"flower": "{{ line_item.flower.id }}", "quantity": 1}'
+                  hx-vals='{"product": "{{ product.id }}", "quantity": 1}'
                   hx-target="#items-and-price"
                   hx-swap="outerHTML">
-            {% if line_item.flower.image %}
-              <img src="{{ line_item.flower.image.url }}" alt="" class="flower-thumb">
+            {% if product.flower.image %}
+              <img src="{{ product.flower.image.url }}" alt="" class="flower-thumb">
             {% endif %}
-            <span class="flower-btn-name">{{ line_item.name }}</span>
-            <span class="flower-btn-meta">{{ line_item.flower.variety.name }} {{ line_item.flower.color }}</span>
+            <span class="flower-btn-name">{{ product.label }}</span>
+            {% if product.flower %}<span class="flower-btn-meta">{{ product.flower.variety.name }} {{ product.flower.color }}</span>{% endif %}
           </button>
         {% endfor %}
       </div>

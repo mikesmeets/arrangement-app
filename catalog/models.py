@@ -113,6 +113,47 @@ class Vendor(models.Model):
         return self.name
 
 
+class Product(models.Model):
+    """A vendor's named product — the base inventory/arrangement unit. Only the
+    plain product name is stored; the "<abbr> - <name>" label is computed and
+    used just in the arrangement maker. The Flower taxonomy link is optional, so
+    the app works without it."""
+
+    vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="products")
+    name = models.CharField(max_length=150)
+    flower = models.ForeignKey(
+        Flower,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="products",
+    )
+
+    class Meta:
+        ordering = ["vendor__name", "name"]
+        unique_together = ("vendor", "name")
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def label(self):
+        """Vendor-abbreviated label, e.g. "MAY - Freedom Rose Red 50cm".
+        Computed on the fly — only shown in the arrangement maker."""
+        prefix = self.vendor.abbreviation or self.vendor.name
+        return f"{prefix} - {self.name}"
+
+    @property
+    def current_avg_cost(self):
+        result = self.inventory_items.aggregate(avg=models.Avg("per_stem_cost"))
+        return result["avg"] or Decimal("0.00")
+
+    @property
+    def quantity_on_hand(self):
+        result = self.inventory_items.aggregate(total=models.Sum("quantity"))
+        return result["total"] or 0
+
+
 class Invoice(models.Model):
     STATUS_PENDING = "pending_review"
     STATUS_CONFIRMED = "confirmed"
@@ -186,8 +227,15 @@ class InvoiceLineItem(models.Model):
 
 
 class InventoryItem(models.Model):
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, related_name="inventory_items"
+    )
     flower = models.ForeignKey(
-        Flower, on_delete=models.PROTECT, related_name="inventory_items"
+        Flower,
+        on_delete=models.PROTECT,
+        related_name="inventory_items",
+        null=True,
+        blank=True,
     )
     vendor = models.ForeignKey(
         Vendor, on_delete=models.PROTECT, related_name="inventory_items"

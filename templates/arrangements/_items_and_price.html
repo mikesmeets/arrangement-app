@@ -2,7 +2,7 @@
   <table>
     <thead>
       <tr>
-        <th>Flower</th>
+        <th>Product</th>
         <th>Qty</th>
         <th>Per-stem cost</th>
         <th>Total cost</th>
@@ -12,7 +12,7 @@
     <tbody>
       {% for item in arrangement.items.all %}
       <tr>
-        <td>{{ item.flower }}</td>
+        <td>{{ item.product.label }}</td>
         <td>
           <div class="qty-controls">
             <button type="button" class="qty-btn"
@@ -36,7 +36,7 @@
                     aria-label="Increase quantity">&#9650;</button>
           </div>
         </td>
-        <td>${{ item.flower.current_avg_cost|floatformat:2 }}</td>
+        <td>${{ item.product.current_avg_cost|floatformat:2 }}</td>
         <td>${{ item.line_cost|floatformat:2 }}</td>
         <td>
           <button class="btn btn-danger"

@@ -9,6 +9,7 @@ from .models import (
     InventoryItem,
     Invoice,
     InvoiceLineItem,
+    Product,
     Vendor,
 )
 
@@ -58,9 +59,16 @@ class InvoiceAdmin(admin.ModelAdmin):
     inlines = [InvoiceLineItemInline]
 
 
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ["name", "vendor", "flower", "quantity_on_hand", "current_avg_cost"]
+    list_filter = ["vendor"]
+    search_fields = ["name"]
+
+
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
-    list_display = ["name", "flower", "vendor", "quantity", "per_stem_cost", "date_received"]
+    list_display = ["name", "product", "vendor", "quantity", "per_stem_cost", "date_received"]
     list_filter = ["vendor", "flower__category"]
     search_fields = ["name"]
 
