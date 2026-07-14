@@ -132,23 +132,31 @@ STORAGES = {
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
-if AWS_STORAGE_BUCKET_NAME:
+AWS_S3_BUCKET_NAME = env("AWS_S3_BUCKET_NAME", default="")
+if AWS_S3_BUCKET_NAME:
+    _s3_options = {
+        "bucket_name": AWS_S3_BUCKET_NAME,
+        "region_name": env("AWS_DEFAULT_REGION", default="us-east-1"),
+        # Private objects served through expiring signed URLs.
+        "querystring_auth": True,
+        "querystring_expire": env.int("AWS_S3_URL_EXPIRE", default=3600),
+        "signature_version": "s3v4",
+        # Buckets with ACLs disabled (bucket-owner-enforced) reject an ACL, so
+        # don't send one — access is governed by the bucket policy.
+        "default_acl": None,
+        # Don't silently overwrite two uploads that share a name.
+        "file_overwrite": False,
+    }
+    # An S3-compatible endpoint (Railway bucket / MinIO / etc.) needs its URL
+    # passed through, and generally requires path-style addressing rather than
+    # AWS's virtual-hosted style. Omit both to talk to real AWS S3.
+    _s3_endpoint = env("AWS_ENDPOINT_URL", default="")
+    if _s3_endpoint:
+        _s3_options["endpoint_url"] = _s3_endpoint
+        _s3_options["addressing_style"] = "path"
     STORAGES["default"] = {
         "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": {
-            "bucket_name": AWS_STORAGE_BUCKET_NAME,
-            "region_name": env("AWS_S3_REGION_NAME", default="us-east-1"),
-            # Private objects served through expiring signed URLs.
-            "querystring_auth": True,
-            "querystring_expire": env.int("AWS_S3_URL_EXPIRE", default=3600),
-            "signature_version": "s3v4",
-            # Modern S3 buckets have ACLs disabled (bucket-owner-enforced), so
-            # don't send an ACL — access is governed by the bucket policy/IAM.
-            "default_acl": None,
-            # Don't silently overwrite two uploads that share a name.
-            "file_overwrite": False,
-        },
+        "OPTIONS": _s3_options,
     }
     # boto3 reads AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY from the environment.
 
