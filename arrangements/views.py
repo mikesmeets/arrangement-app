@@ -30,8 +30,21 @@ def arrangement_edit(request, pk):
     if request.method == "POST":
         form = ArrangementForm(request.POST, request.FILES, instance=arrangement)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Arrangement saved.")
+            arrangement = form.save()
+            # Attaching a subscription pulls its current price into the price field.
+            if (
+                "subscription" in form.changed_data
+                and arrangement.subscription
+                and arrangement.subscription.current_price is not None
+            ):
+                arrangement.price_override = arrangement.subscription.current_price
+                arrangement.save(update_fields=["price_override"])
+                messages.success(
+                    request,
+                    f"Arrangement saved. Price set to the subscription's ${arrangement.price_override}.",
+                )
+            else:
+                messages.success(request, "Arrangement saved.")
             return redirect("arrangement-edit", pk=arrangement.pk)
     else:
         form = ArrangementForm(instance=arrangement)

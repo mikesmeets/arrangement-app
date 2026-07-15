@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import models
 from django.utils import timezone
 
-from catalog.models import Flower, GlobalSettings, Product
+from catalog.models import Flower, GlobalSettings, Product, Subscription
 
 
 class Arrangement(models.Model):
@@ -34,6 +34,14 @@ class Arrangement(models.Model):
     )
     shopify_product_id = models.CharField(max_length=50, blank=True)
     shopify_collection = models.CharField(max_length=150, blank=True)
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="arrangements",
+        help_text="Attach to fulfil a subscription (pulls its current price).",
+    )
     tags = models.CharField(max_length=255, blank=True, help_text="Comma-separated")
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT

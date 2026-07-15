@@ -9,6 +9,7 @@ class ArrangementForm(forms.ModelForm):
         fields = [
             "name",
             "type",
+            "subscription",
             "description",
             "photo",
             "shopify_collection",
