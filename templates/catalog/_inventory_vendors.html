@@ -6,39 +6,41 @@
     <span class="muted">{{ row.active_on_hand }} stems on hand</span>
   </summary>
   <div class="collapse-body">
-    <table>
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Received</th>
-          <th>On hand</th>
-          <th>Per-stem cost</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in row.items %}
-        <tr class="{% if item.expired %}inv-expired{% endif %}">
-          <td>{{ item.product.label }}</td>
-          <td>{{ item.date_received }}</td>
-          <td>{{ item.quantity }}</td>
-          <td>${{ item.per_stem_cost|floatformat:2 }}</td>
-          <td class="inv-action">
-            {% if item.expired %}
-              <span class="muted">Expired {{ item.expired_on }}</span>
-              <button type="button" class="btn btn-secondary"
-                      hx-post="{% url 'inventory-expire' item.id %}"
-                      hx-target="#inventory-list" hx-swap="outerHTML">Restore</button>
-            {% else %}
-              <button type="button" class="btn btn-danger"
-                      hx-post="{% url 'inventory-expire' item.id %}"
-                      hx-target="#inventory-list" hx-swap="outerHTML">Mark expired</button>
-            {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% for d in row.deliveries %}
+    <div class="delivery{% if not d.active %} delivery-expired{% endif %}">
+      <div class="delivery-head">
+        <span class="delivery-label">
+          {% if d.invoice %}Invoice{% if d.invoice.vendor_invoice_number %} #{{ d.invoice.vendor_invoice_number }}{% endif %} &middot; {{ d.date }}{% else %}Received {{ d.date }}{% endif %}
+        </span>
+        {% if d.active %}
+          <button type="button" class="btn btn-danger"
+                  hx-post="{% url 'inventory-expire' %}"
+                  hx-vals='{% if d.invoice %}{"invoice": "{{ d.invoice.id }}"}{% else %}{"vendor": "{{ row.vendor.id }}", "date": "{{ d.date|date:"Y-m-d" }}"}{% endif %}'
+                  hx-target="#inventory-list" hx-swap="outerHTML">Mark expired</button>
+        {% else %}
+          <span class="muted">Expired</span>
+          <button type="button" class="btn btn-secondary"
+                  hx-post="{% url 'inventory-expire' %}"
+                  hx-vals='{% if d.invoice %}{"invoice": "{{ d.invoice.id }}", "restore": "1"}{% else %}{"vendor": "{{ row.vendor.id }}", "date": "{{ d.date|date:"Y-m-d" }}", "restore": "1"}{% endif %}'
+                  hx-target="#inventory-list" hx-swap="outerHTML">Restore</button>
+        {% endif %}
+      </div>
+      <table>
+        <thead>
+          <tr><th>Product</th><th>On hand</th><th>Per-stem cost</th></tr>
+        </thead>
+        <tbody>
+          {% for item in d.items %}
+          <tr class="{% if item.expired %}inv-expired{% endif %}">
+            <td>{{ item.product.label }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>${{ item.per_stem_cost|floatformat:2 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
   </div>
 </details>
 {% empty %}

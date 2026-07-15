@@ -24,21 +24,34 @@ from .thumbnails import render_thumbnail
 
 
 def _inventory_vendor_rows():
-    """Inventory batches grouped by vendor, newest first, for the collapsible
-    inventory screen. Active (non-expired) quantities feed the on-hand total."""
+    """Inventory grouped by vendor, then by delivery, for the collapsible
+    inventory screen. A delivery is the source invoice, or — for hand-entered
+    stock with no invoice — the received date. Expiration acts per delivery."""
     items = (
-        InventoryItem.objects.select_related("vendor", "product", "flower__variety")
-        .order_by("vendor__name", "product__name", "-date_received")
+        InventoryItem.objects.select_related("vendor", "product", "invoice")
+        .order_by("vendor__name", "-date_received", "product__name")
     )
     vendor_rows = []
-    current = None
+    vcur = None
     for item in items:
-        if current is None or current["vendor"] != item.vendor:
-            current = {"vendor": item.vendor, "items": [], "active_on_hand": 0}
-            vendor_rows.append(current)
-        current["items"].append(item)
+        if vcur is None or vcur["vendor"] != item.vendor:
+            vcur = {"vendor": item.vendor, "deliveries": [], "active_on_hand": 0}
+            vendor_rows.append(vcur)
+        key = f"inv-{item.invoice_id}" if item.invoice_id else f"date-{item.date_received}"
+        delivery = next((d for d in vcur["deliveries"] if d["key"] == key), None)
+        if delivery is None:
+            delivery = {
+                "key": key,
+                "invoice": item.invoice,
+                "date": item.date_received,
+                "items": [],
+                "active": False,
+            }
+            vcur["deliveries"].append(delivery)
+        delivery["items"].append(item)
         if not item.expired:
-            current["active_on_hand"] += item.quantity
+            delivery["active"] = True
+            vcur["active_on_hand"] += item.quantity
     return vendor_rows
 
 
@@ -52,16 +65,25 @@ def inventory_list(request):
 
 
 @login_required
-def inventory_expire(request, item_id):
-    item = get_object_or_404(InventoryItem, pk=item_id)
+def inventory_expire(request):
+    """Expire (or restore) every inventory item in a delivery — an invoice, or a
+    vendor's hand-entered stock from a given received date."""
     if request.method == "POST":
-        if item.expired:
-            item.expired = False
-            item.expired_on = None
+        invoice_id = request.POST.get("invoice")
+        vendor_id = request.POST.get("vendor")
+        date = request.POST.get("date")
+        if invoice_id:
+            items = InventoryItem.objects.filter(invoice_id=invoice_id)
+        elif vendor_id and date:
+            items = InventoryItem.objects.filter(
+                invoice__isnull=True, vendor_id=vendor_id, date_received=date
+            )
         else:
-            item.expired = True
-            item.expired_on = timezone.localdate()
-        item.save(update_fields=["expired", "expired_on"])
+            items = InventoryItem.objects.none()
+        if request.POST.get("restore") == "1":
+            items.update(expired=False, expired_on=None)
+        else:
+            items.update(expired=True, expired_on=timezone.localdate())
     return render(
         request,
         "catalog/_inventory_vendors.html",
