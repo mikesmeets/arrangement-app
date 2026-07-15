@@ -76,15 +76,16 @@ def arrangement_subscription_name(request, pk):
 
 
 def _recent_invoice_products():
-    """Recent confirmed invoices paired with the distinct products received on
-    each, for the invoice-based picker in the arrangement builder. Buttons are
-    labelled with the product's vendor-abbreviated label. Products not sourced
-    from a recent invoice (e.g. seeded or manually-added stock) fall into a
-    per-vendor group so every product stays addable."""
+    """Recent invoices paired with the distinct products still in active stock,
+    for the invoice-based picker in the arrangement builder. Buttons are labelled
+    with the product's vendor-abbreviated label. Only invoices/products with
+    unexpired inventory show — expired stock has no cost so it's not addable.
+    Products not sourced from a recent invoice (seeded or manually-added stock)
+    fall into a per-vendor group so every in-stock product stays addable."""
     invoices = (
         Invoice.objects.select_related("vendor")
         .prefetch_related("inventory_items__product__vendor", "inventory_items__product__flower__variety")
-        .filter(inventory_items__isnull=False)
+        .filter(inventory_items__expired=False)
         .distinct()
         .order_by("-date", "-created_at")
     )
@@ -94,6 +95,8 @@ def _recent_invoice_products():
         products = []
         seen = set()
         for inv_item in invoice.inventory_items.all():
+            if inv_item.expired:
+                continue
             product = inv_item.product
             if product and product.id not in seen:
                 seen.add(product.id)
@@ -106,7 +109,9 @@ def _recent_invoice_products():
 
     leftover = (
         Product.objects.select_related("vendor", "flower__variety")
+        .filter(inventory_items__expired=False)
         .exclude(id__in=surfaced)
+        .distinct()
         .order_by("vendor__name", "name")
     )
     by_vendor = {}
