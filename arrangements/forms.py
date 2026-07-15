@@ -8,6 +8,7 @@ class ArrangementForm(forms.ModelForm):
         model = Arrangement
         fields = [
             "name",
+            "mode",
             "type",
             "subscription",
             "description",
@@ -17,6 +18,7 @@ class ArrangementForm(forms.ModelForm):
             "status",
         ]
         widgets = {
+            "mode": forms.HiddenInput(),
             "description": forms.Textarea(attrs={"rows": 4}),
             "photo": forms.ClearableFileInput(attrs={"accept": "image/*", "capture": "environment"}),
             "tags": forms.TextInput(attrs={"placeholder": "e.g. valentines, red, roses"}),

@@ -2,9 +2,10 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from catalog.models import Invoice, Product
+from catalog.models import Invoice, Product, Subscription
 
 from .forms import ArrangementForm
 from .models import Arrangement, ArrangementItem
@@ -57,6 +58,21 @@ def arrangement_edit(request, pk):
             "invoice_rows": _recent_invoice_products(),
         },
     )
+
+
+@login_required
+def arrangement_subscription_name(request, pk):
+    """Suggested arrangement name for a subscription: "<customer> — <sub-name> #N",
+    where N is the next number for that subscription."""
+    sub_id = request.GET.get("subscription")
+    if not sub_id:
+        return HttpResponse("")
+    try:
+        subscription = Subscription.objects.select_related("customer").get(pk=sub_id)
+    except (Subscription.DoesNotExist, ValueError):
+        return HttpResponse("")
+    number = subscription.arrangements.exclude(pk=pk).count() + 1
+    return HttpResponse(f"{subscription} #{number}")
 
 
 def _recent_invoice_products():

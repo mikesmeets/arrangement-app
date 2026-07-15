@@ -6,12 +6,26 @@
 
 <div class="card">
   <h2>Details</h2>
-  <form method="post" enctype="multipart/form-data">
+  <div class="mode-selector" id="mode-selector">
+    <button type="button" class="mode-btn" data-mode="subscription">Subscription</button>
+    <button type="button" class="mode-btn" data-mode="shopify">Shopify</button>
+    <button type="button" class="mode-btn" data-mode="recipe">Recipe</button>
+  </div>
+  <form method="post" enctype="multipart/form-data" id="arrangement-form"
+        data-name-url="{% url 'arrangement-subscription-name' arrangement.pk %}">
     {% csrf_token %}
+    {{ form.mode }}
+    <div id="subscription-field">
+      <label for="{{ form.subscription.id_for_label }}">{{ form.subscription.label }}</label>
+      {{ form.subscription }}
+      {% if form.subscription.errors %}<ul class="errorlist">{% for e in form.subscription.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    </div>
     {% for field in form %}
-      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-      {{ field }}
-      {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      {% if field.name != 'mode' and field.name != 'subscription' %}
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      {% endif %}
     {% endfor %}
     {% if arrangement.photo %}
       <p class="muted">Current photo: {{ arrangement.photo.name }}</p>
@@ -19,6 +33,46 @@
     <button type="submit" class="btn" style="margin-top:1rem;">Save Details</button>
   </form>
 </div>
+
+<script>
+  (function () {
+    var form = document.getElementById('arrangement-form');
+    if (!form) return;
+    var modeInput = document.getElementById('id_mode');
+    var subField = document.getElementById('subscription-field');
+    var subSelect = subField.querySelector('select');
+    var nameInput = document.getElementById('id_name');
+    var nameUrl = form.getAttribute('data-name-url');
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('#mode-selector .mode-btn'));
+
+    function fillNameFromSubscription() {
+      var subId = subSelect.value;
+      if (!subId) return;
+      fetch(nameUrl + '?subscription=' + encodeURIComponent(subId))
+        .then(function (r) { return r.text(); })
+        .then(function (t) { if (t) nameInput.value = t.trim(); });
+    }
+
+    function applyMode(mode, userInitiated) {
+      modeInput.value = mode;
+      buttons.forEach(function (b) {
+        b.classList.toggle('mode-btn-active', b.dataset.mode === mode);
+      });
+      subField.style.display = (mode === 'subscription') ? '' : 'none';
+      if (userInitiated) {
+        if (mode === 'subscription') fillNameFromSubscription();
+        else subSelect.value = '';
+      }
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () { applyMode(b.dataset.mode, true); });
+    });
+    subSelect.addEventListener('change', fillNameFromSubscription);
+
+    applyMode(modeInput.value || 'shopify', false);
+  })();
+</script>
 
 <div class="card">
   <h2>Add flowers from recent invoices</h2>

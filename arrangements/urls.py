@@ -6,6 +6,7 @@ urlpatterns = [
     path("", views.arrangement_list, name="arrangement-list"),
     path("new/", views.arrangement_create, name="arrangement-create"),
     path("<int:pk>/edit/", views.arrangement_edit, name="arrangement-edit"),
+    path("<int:pk>/subscription-name/", views.arrangement_subscription_name, name="arrangement-subscription-name"),
     path("<int:pk>/delete/", views.arrangement_delete, name="arrangement-delete"),
     path("<int:pk>/items/add/", views.arrangement_add_item, name="arrangement-add-item"),
     path("<int:pk>/price/", views.arrangement_set_price, name="arrangement-set-price"),

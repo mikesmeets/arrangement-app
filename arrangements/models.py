@@ -23,8 +23,18 @@ class Arrangement(models.Model):
         (TYPE_BOUTONNIERE, "Boutonniere"),
     ]
 
+    MODE_SUBSCRIPTION = "subscription"
+    MODE_SHOPIFY = "shopify"
+    MODE_RECIPE = "recipe"
+    MODE_CHOICES = [
+        (MODE_SUBSCRIPTION, "Subscription"),
+        (MODE_SHOPIFY, "Shopify"),
+        (MODE_RECIPE, "Recipe"),
+    ]
+
     sku = models.CharField(max_length=20, unique=True, blank=True, editable=False)
     name = models.CharField(max_length=150)
+    mode = models.CharField(max_length=20, choices=MODE_CHOICES, default=MODE_SHOPIFY)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, default=TYPE_ARRANGEMENT)
     description = models.TextField(blank=True)
     ai_generated_description = models.BooleanField(default=False)
