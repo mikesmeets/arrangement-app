@@ -117,6 +117,20 @@ class Vendor(models.Model):
         return self.name
 
 
+class Customer(models.Model):
+    name = models.CharField(max_length=150)
+    sub_name = models.CharField(
+        max_length=150, blank=True, default="", help_text="Business or personal secondary name"
+    )
+    address = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Product(models.Model):
     """A vendor's named product — the base inventory/arrangement unit. Only the
     plain product name is stored; the "<abbr> - <name>" label is computed and

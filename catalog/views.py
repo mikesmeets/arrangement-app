@@ -9,9 +9,17 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .forms import FlowerForm, InventoryItemForm, InvoiceFileForm, InvoiceForm, VendorForm
+from .forms import (
+    CustomerForm,
+    FlowerForm,
+    InventoryItemForm,
+    InvoiceFileForm,
+    InvoiceForm,
+    VendorForm,
+)
 from .invoice_parsing import parse_invoice
 from .models import (
+    Customer,
     Flower,
     FlowerCategory,
     InventoryItem,
@@ -167,6 +175,51 @@ def vendor_edit(request, pk):
 def vendor_options(request):
     vendors = Vendor.objects.all()
     return render(request, "catalog/_vendor_options.html", {"vendors": vendors})
+
+
+@login_required
+def customer_add(request):
+    is_modal = bool(request.htmx)
+    if request.method == "POST":
+        form = CustomerForm(request.POST)
+        if form.is_valid():
+            customer = form.save()
+            if is_modal:
+                response = HttpResponse("")
+                response["HX-Trigger"] = json.dumps(
+                    {"customer-added": {"id": customer.id, "label": str(customer)}}
+                )
+                return response
+            messages.success(request, "Customer added.")
+            return redirect("customer-list")
+    else:
+        form = CustomerForm(initial={"name": request.GET.get("name", "").strip()})
+    template = "catalog/_customer_form_modal.html" if is_modal else "catalog/customer_form.html"
+    return render(request, template, {"form": form, "title": "Add Customer"})
+
+
+@login_required
+def customer_list(request):
+    customers = Customer.objects.all()
+    return render(request, "catalog/customer_list.html", {"customers": customers})
+
+
+@login_required
+def customer_edit(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    if request.method == "POST":
+        form = CustomerForm(request.POST, instance=customer)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Customer updated.")
+            return redirect("customer-list")
+    else:
+        form = CustomerForm(instance=customer)
+    return render(
+        request,
+        "catalog/customer_form.html",
+        {"form": form, "title": "Edit Customer", "customer": customer},
+    )
 
 
 SORT_FIELDS = {

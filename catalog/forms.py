@@ -1,6 +1,14 @@
 from django import forms
 
-from .models import Flower, FlowerCategory, FlowerVariety, InventoryItem, Invoice, Vendor
+from .models import (
+    Customer,
+    Flower,
+    FlowerCategory,
+    FlowerVariety,
+    InventoryItem,
+    Invoice,
+    Vendor,
+)
 
 
 class InventoryItemForm(forms.ModelForm):
@@ -26,6 +34,13 @@ class VendorForm(forms.ModelForm):
         model = Vendor
         fields = ["name", "abbreviation", "contact_name", "phone", "email", "website", "address", "notes"]
         labels = {"abbreviation": "Abbreviation"}
+
+
+class CustomerForm(forms.ModelForm):
+    class Meta:
+        model = Customer
+        fields = ["name", "sub_name", "address"]
+        labels = {"sub_name": "Sub-name (business or personal)"}
 
 
 class InvoiceForm(forms.ModelForm):

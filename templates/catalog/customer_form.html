@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — TreBlooms{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>
+<div class="card">
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    {% endfor %}
+    <button type="submit" class="btn" style="margin-top:1rem;">Save</button>
+    <a class="btn btn-secondary" href="{% url 'customer-list' %}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

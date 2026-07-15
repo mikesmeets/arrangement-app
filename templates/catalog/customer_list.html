@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Customers — TreBlooms{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;">
+  <h1>Customers</h1>
+  <button type="button" class="btn" hx-get="{% url 'customer-add' %}" hx-target="#modal-root" hx-swap="innerHTML">+ Add Customer</button>
+</div>
+
+<div class="card" id="customer-table-card"
+     hx-get="{% url 'customer-list' %}"
+     hx-trigger="customer-added from:body"
+     hx-select="#customer-table-card"
+     hx-target="this"
+     hx-swap="outerHTML">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Sub-name</th>
+        <th>Address</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for customer in customers %}
+      <tr>
+        <td>{{ customer.name }}</td>
+        <td>{{ customer.sub_name|default:"—" }}</td>
+        <td>{{ customer.address|default:"—"|linebreaksbr }}</td>
+        <td><a class="btn btn-secondary" href="{% url 'customer-edit' customer.pk %}">Edit</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="muted">No customers yet. <a href="{% url 'customer-add' %}" hx-get="{% url 'customer-add' %}" hx-target="#modal-root" hx-swap="innerHTML">Add one</a>.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

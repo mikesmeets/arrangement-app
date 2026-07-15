@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from .models import (
+    Customer,
     Flower,
     FlowerCategory,
     FlowerVariety,
@@ -43,6 +44,12 @@ class FlowerAdmin(admin.ModelAdmin):
 class VendorAdmin(admin.ModelAdmin):
     list_display = ["name", "abbreviation", "contact_name", "phone", "email", "website"]
     search_fields = ["name", "abbreviation", "contact_name"]
+
+
+@admin.register(Customer)
+class CustomerAdmin(admin.ModelAdmin):
+    list_display = ["name", "sub_name"]
+    search_fields = ["name", "sub_name"]
 
 
 class InvoiceLineItemInline(admin.TabularInline):
