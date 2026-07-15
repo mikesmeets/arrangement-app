@@ -205,12 +205,13 @@
       cursor: pointer;
     }
     .row-delete-btn:hover { color: #7a1f1f; }
-    .invoice-group {
+    .collapse-group {
       border: 1px solid var(--border);
       border-radius: 8px;
       margin-bottom: 0.5rem;
+      background: white;
     }
-    .invoice-group > summary {
+    .collapse-group > summary {
       cursor: pointer;
       padding: 0.6rem 0.75rem;
       list-style: none;
@@ -219,15 +220,19 @@
       align-items: baseline;
       gap: 0.5rem;
     }
-    .invoice-group > summary::-webkit-details-marker { display: none; }
-    .invoice-group > summary::before {
+    .collapse-group > summary::-webkit-details-marker { display: none; }
+    .collapse-group > summary::before {
       content: "\25B8";
       color: var(--pink-dark);
       transition: transform 0.15s;
     }
-    .invoice-group[open] > summary::before { content: "\25BE"; }
-    .invoice-group[open] > summary { border-bottom: 1px solid var(--border); }
-    .invoice-group .flower-grid { padding: 0.75rem; margin-bottom: 0; }
+    .collapse-group[open] > summary::before { content: "\25BE"; }
+    .collapse-group[open] > summary { border-bottom: 1px solid var(--border); }
+    .collapse-group .flower-grid { padding: 0.75rem; margin-bottom: 0; }
+    .collapse-body { padding: 0 0.75rem 0.25rem; overflow-x: auto; }
+    tr.inv-expired td { opacity: 0.55; }
+    tr.inv-expired td.inv-action { opacity: 1; }
+    .inv-action { white-space: nowrap; }
   </style>
   {% block extra_head %}{% endblock %}
 </head>

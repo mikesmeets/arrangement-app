@@ -24,7 +24,7 @@
   <h2>Add flowers from recent invoices</h2>
   <p class="muted">Open an invoice and tap a flower to add one stem.</p>
   {% for row in invoice_rows %}
-    <details class="invoice-group" {% if forloop.first %}open{% endif %}>
+    <details class="collapse-group" {% if forloop.first %}open{% endif %}>
       <summary>
         <strong>{{ row.vendor|default:"Unknown vendor" }}</strong>
         <span class="muted">{% if row.invoice %}{{ row.invoice.date }}{% if row.invoice.vendor_invoice_number %} &middot; #{{ row.invoice.vendor_invoice_number }}{% endif %}{% else %}Direct / manual stock{% endif %} &middot; {{ row.products|length }} product{{ row.products|length|pluralize }}</span>

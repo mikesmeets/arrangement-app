@@ -76,12 +76,16 @@ class Flower(models.Model):
 
     @property
     def current_avg_cost(self):
-        result = self.inventory_items.aggregate(avg=models.Avg("per_stem_cost"))
+        result = self.inventory_items.filter(expired=False).aggregate(
+            avg=models.Avg("per_stem_cost")
+        )
         return result["avg"] or Decimal("0.00")
 
     @property
     def quantity_on_hand(self):
-        result = self.inventory_items.aggregate(total=models.Sum("quantity"))
+        result = self.inventory_items.filter(expired=False).aggregate(
+            total=models.Sum("quantity")
+        )
         return result["total"] or 0
 
     @property
@@ -146,12 +150,16 @@ class Product(models.Model):
 
     @property
     def current_avg_cost(self):
-        result = self.inventory_items.aggregate(avg=models.Avg("per_stem_cost"))
+        result = self.inventory_items.filter(expired=False).aggregate(
+            avg=models.Avg("per_stem_cost")
+        )
         return result["avg"] or Decimal("0.00")
 
     @property
     def quantity_on_hand(self):
-        result = self.inventory_items.aggregate(total=models.Sum("quantity"))
+        result = self.inventory_items.filter(expired=False).aggregate(
+            total=models.Sum("quantity")
+        )
         return result["total"] or 0
 
 
@@ -254,6 +262,8 @@ class InventoryItem(models.Model):
     quantity = models.PositiveIntegerField(default=0)
     per_stem_cost = models.DecimalField(max_digits=8, decimal_places=2)
     date_received = models.DateField(default=timezone.now)
+    expired = models.BooleanField(default=False)
+    expired_on = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ["-date_received"]

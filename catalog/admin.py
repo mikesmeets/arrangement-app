@@ -68,8 +68,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
-    list_display = ["name", "product", "vendor", "quantity", "per_stem_cost", "date_received"]
-    list_filter = ["vendor", "flower__category"]
+    list_display = ["name", "product", "vendor", "quantity", "per_stem_cost", "date_received", "expired"]
+    list_filter = ["expired", "vendor", "flower__category"]
     search_fields = ["name"]
 
 

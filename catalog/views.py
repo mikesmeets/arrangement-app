@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.forms import modelformset_factory
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from .forms import FlowerForm, InventoryItemForm, InvoiceFileForm, InvoiceForm, VendorForm
 from .invoice_parsing import parse_invoice
@@ -22,25 +23,50 @@ from .models import (
 from .thumbnails import render_thumbnail
 
 
-@login_required
-def inventory_list(request):
-    products = (
-        Product.objects.select_related("vendor", "flower__variety", "flower__category")
-        .prefetch_related("inventory_items")
-        .order_by("vendor__name", "name")
+def _inventory_vendor_rows():
+    """Inventory batches grouped by vendor, newest first, for the collapsible
+    inventory screen. Active (non-expired) quantities feed the on-hand total."""
+    items = (
+        InventoryItem.objects.select_related("vendor", "product", "flower__variety")
+        .order_by("vendor__name", "product__name", "-date_received")
     )
     vendor_rows = []
     current = None
-    for product in products:
-        on_hand = product.quantity_on_hand
-        if current is None or current["vendor"] != product.vendor:
-            current = {"vendor": product.vendor, "products": [], "total_on_hand": 0}
+    for item in items:
+        if current is None or current["vendor"] != item.vendor:
+            current = {"vendor": item.vendor, "items": [], "active_on_hand": 0}
             vendor_rows.append(current)
-        current["products"].append(
-            {"product": product, "on_hand": on_hand, "avg_cost": product.current_avg_cost}
-        )
-        current["total_on_hand"] += on_hand
-    return render(request, "catalog/inventory_list.html", {"vendor_rows": vendor_rows})
+        current["items"].append(item)
+        if not item.expired:
+            current["active_on_hand"] += item.quantity
+    return vendor_rows
+
+
+@login_required
+def inventory_list(request):
+    return render(
+        request,
+        "catalog/inventory_list.html",
+        {"vendor_rows": _inventory_vendor_rows()},
+    )
+
+
+@login_required
+def inventory_expire(request, item_id):
+    item = get_object_or_404(InventoryItem, pk=item_id)
+    if request.method == "POST":
+        if item.expired:
+            item.expired = False
+            item.expired_on = None
+        else:
+            item.expired = True
+            item.expired_on = timezone.localdate()
+        item.save(update_fields=["expired", "expired_on"])
+    return render(
+        request,
+        "catalog/_inventory_vendors.html",
+        {"vendor_rows": _inventory_vendor_rows()},
+    )
 
 
 def _product_for(vendor, name, flower=None):

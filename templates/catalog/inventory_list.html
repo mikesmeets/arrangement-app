@@ -5,37 +5,5 @@
   <h1>Inventory</h1>
   <a class="btn" href="{% url 'inventory-add' %}">+ Add Inventory</a>
 </div>
-
-{% for row in vendor_rows %}
-<div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:baseline;">
-    <h2 style="margin:0;">{{ row.vendor.name }}</h2>
-    <span class="muted">{{ row.total_on_hand }} stems on hand</span>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Flower (taxonomy)</th>
-        <th>On hand</th>
-        <th>Avg per-stem cost</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for entry in row.products %}
-      <tr>
-        <td>{{ entry.product.label }}</td>
-        <td>{% if entry.product.flower %}<a href="{% url 'flower-detail' entry.product.flower.pk %}">{{ entry.product.flower }}</a>{% else %}<span class="muted">—</span>{% endif %}</td>
-        <td>{{ entry.on_hand }}</td>
-        <td>${{ entry.avg_cost|floatformat:2 }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% empty %}
-<div class="card">
-  <p class="muted">No inventory yet. Confirm an invoice to add stock, or <a href="{% url 'inventory-add' %}">add inventory by hand</a>.</p>
-</div>
-{% endfor %}
+{% include "catalog/_inventory_vendors.html" %}
 {% endblock %}

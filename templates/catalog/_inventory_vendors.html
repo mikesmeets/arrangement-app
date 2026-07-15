@@ -1,0 +1,49 @@
+<div id="inventory-list">
+{% for row in vendor_rows %}
+<details class="collapse-group" {% if forloop.first %}open{% endif %}>
+  <summary>
+    <strong>{{ row.vendor.name }}</strong>
+    <span class="muted">{{ row.active_on_hand }} stems on hand</span>
+  </summary>
+  <div class="collapse-body">
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Received</th>
+          <th>On hand</th>
+          <th>Per-stem cost</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in row.items %}
+        <tr class="{% if item.expired %}inv-expired{% endif %}">
+          <td>{{ item.product.label }}</td>
+          <td>{{ item.date_received }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>${{ item.per_stem_cost|floatformat:2 }}</td>
+          <td class="inv-action">
+            {% if item.expired %}
+              <span class="muted">Expired {{ item.expired_on }}</span>
+              <button type="button" class="btn btn-secondary"
+                      hx-post="{% url 'inventory-expire' item.id %}"
+                      hx-target="#inventory-list" hx-swap="outerHTML">Restore</button>
+            {% else %}
+              <button type="button" class="btn btn-danger"
+                      hx-post="{% url 'inventory-expire' item.id %}"
+                      hx-target="#inventory-list" hx-swap="outerHTML">Mark expired</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</details>
+{% empty %}
+<div class="card">
+  <p class="muted">No inventory yet. Confirm an invoice to add stock, or <a href="{% url 'inventory-add' %}">add inventory by hand</a>.</p>
+</div>
+{% endfor %}
+</div>
