@@ -135,6 +135,9 @@ class Subscription(models.Model):
     sub_name = models.CharField(
         max_length=150, blank=True, default="", help_text="Business or personal name for this subscription"
     )
+    current_price = models.DecimalField(
+        max_digits=8, decimal_places=2, null=True, blank=True
+    )
 
     class Meta:
         ordering = ["customer__name", "sub_name"]

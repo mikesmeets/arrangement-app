@@ -55,7 +55,7 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = ["customer", "sub_name"]
+    list_display = ["customer", "sub_name", "current_price"]
     list_filter = ["customer"]
     search_fields = ["customer__name", "sub_name"]
 

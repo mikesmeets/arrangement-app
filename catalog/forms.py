@@ -46,7 +46,7 @@ class CustomerForm(forms.ModelForm):
 class SubscriptionForm(forms.ModelForm):
     class Meta:
         model = Subscription
-        fields = ["customer", "sub_name"]
+        fields = ["customer", "sub_name", "current_price"]
         labels = {"sub_name": "Sub-name (business or personal)"}
 
 

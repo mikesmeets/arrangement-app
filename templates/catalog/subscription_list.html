@@ -12,6 +12,7 @@
       <tr>
         <th>Customer</th>
         <th>Sub-name</th>
+        <th>Current price</th>
         <th></th>
       </tr>
     </thead>
@@ -20,10 +21,11 @@
       <tr>
         <td>{{ subscription.customer.name }}</td>
         <td>{{ subscription.sub_name|default:"—" }}</td>
+        <td>{% if subscription.current_price is not None %}${{ subscription.current_price|floatformat:2 }}{% else %}<span class="muted">—</span>{% endif %}</td>
         <td><a class="btn btn-secondary" href="{% url 'subscription-edit' subscription.pk %}">Edit</a></td>
       </tr>
       {% empty %}
-      <tr><td colspan="3" class="muted">No subscriptions yet. <a href="{% url 'subscription-add' %}">Add one</a>.</td></tr>
+      <tr><td colspan="4" class="muted">No subscriptions yet. <a href="{% url 'subscription-add' %}">Add one</a>.</td></tr>
       {% endfor %}
     </tbody>
   </table>
