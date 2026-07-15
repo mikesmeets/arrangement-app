@@ -119,9 +119,6 @@ class Vendor(models.Model):
 
 class Customer(models.Model):
     name = models.CharField(max_length=150)
-    sub_name = models.CharField(
-        max_length=150, blank=True, default="", help_text="Business or personal secondary name"
-    )
     address = models.TextField(blank=True)
 
     class Meta:
@@ -129,6 +126,21 @@ class Customer(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Subscription(models.Model):
+    customer = models.ForeignKey(
+        Customer, on_delete=models.CASCADE, related_name="subscriptions"
+    )
+    sub_name = models.CharField(
+        max_length=150, blank=True, default="", help_text="Business or personal name for this subscription"
+    )
+
+    class Meta:
+        ordering = ["customer__name", "sub_name"]
+
+    def __str__(self):
+        return f"{self.customer} — {self.sub_name}" if self.sub_name else str(self.customer)
 
 
 class Product(models.Model):

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Subscriptions — TreBlooms{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;">
+  <h1>Subscriptions</h1>
+  <a class="btn" href="{% url 'subscription-add' %}">+ Add Subscription</a>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Customer</th>
+        <th>Sub-name</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for subscription in subscriptions %}
+      <tr>
+        <td>{{ subscription.customer.name }}</td>
+        <td>{{ subscription.sub_name|default:"—" }}</td>
+        <td><a class="btn btn-secondary" href="{% url 'subscription-edit' subscription.pk %}">Edit</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="3" class="muted">No subscriptions yet. <a href="{% url 'subscription-add' %}">Add one</a>.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

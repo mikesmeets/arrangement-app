@@ -11,6 +11,7 @@ from .models import (
     Invoice,
     InvoiceLineItem,
     Product,
+    Subscription,
     Vendor,
 )
 
@@ -48,8 +49,15 @@ class VendorAdmin(admin.ModelAdmin):
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ["name", "sub_name"]
-    search_fields = ["name", "sub_name"]
+    list_display = ["name"]
+    search_fields = ["name"]
+
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ["customer", "sub_name"]
+    list_filter = ["customer"]
+    search_fields = ["customer__name", "sub_name"]
 
 
 class InvoiceLineItemInline(admin.TabularInline):

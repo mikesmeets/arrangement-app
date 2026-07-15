@@ -16,7 +16,6 @@
     <thead>
       <tr>
         <th>Name</th>
-        <th>Sub-name</th>
         <th>Address</th>
         <th></th>
       </tr>
@@ -25,12 +24,11 @@
       {% for customer in customers %}
       <tr>
         <td>{{ customer.name }}</td>
-        <td>{{ customer.sub_name|default:"—" }}</td>
         <td>{{ customer.address|default:"—"|linebreaksbr }}</td>
         <td><a class="btn btn-secondary" href="{% url 'customer-edit' customer.pk %}">Edit</a></td>
       </tr>
       {% empty %}
-      <tr><td colspan="4" class="muted">No customers yet. <a href="{% url 'customer-add' %}" hx-get="{% url 'customer-add' %}" hx-target="#modal-root" hx-swap="innerHTML">Add one</a>.</td></tr>
+      <tr><td colspan="3" class="muted">No customers yet. <a href="{% url 'customer-add' %}" hx-get="{% url 'customer-add' %}" hx-target="#modal-root" hx-swap="innerHTML">Add one</a>.</td></tr>
       {% endfor %}
     </tbody>
   </table>

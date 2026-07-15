@@ -15,6 +15,7 @@ from .forms import (
     InventoryItemForm,
     InvoiceFileForm,
     InvoiceForm,
+    SubscriptionForm,
     VendorForm,
 )
 from .invoice_parsing import parse_invoice
@@ -26,6 +27,7 @@ from .models import (
     Invoice,
     InvoiceLineItem,
     Product,
+    Subscription,
     Vendor,
 )
 from .thumbnails import render_thumbnail
@@ -219,6 +221,55 @@ def customer_edit(request, pk):
         request,
         "catalog/customer_form.html",
         {"form": form, "title": "Edit Customer", "customer": customer},
+    )
+
+
+@login_required
+def customer_options(request):
+    customers = Customer.objects.all()
+    return render(request, "catalog/_customer_options.html", {"customers": customers})
+
+
+@login_required
+def subscription_list(request):
+    subscriptions = Subscription.objects.select_related("customer")
+    return render(
+        request, "catalog/subscription_list.html", {"subscriptions": subscriptions}
+    )
+
+
+@login_required
+def subscription_add(request):
+    if request.method == "POST":
+        form = SubscriptionForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Subscription added.")
+            return redirect("subscription-list")
+    else:
+        form = SubscriptionForm()
+    return render(
+        request,
+        "catalog/subscription_form.html",
+        {"form": form, "title": "Add Subscription"},
+    )
+
+
+@login_required
+def subscription_edit(request, pk):
+    subscription = get_object_or_404(Subscription, pk=pk)
+    if request.method == "POST":
+        form = SubscriptionForm(request.POST, instance=subscription)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Subscription updated.")
+            return redirect("subscription-list")
+    else:
+        form = SubscriptionForm(instance=subscription)
+    return render(
+        request,
+        "catalog/subscription_form.html",
+        {"form": form, "title": "Edit Subscription", "subscription": subscription},
     )
 
 

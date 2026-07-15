@@ -7,6 +7,7 @@ from .models import (
     FlowerVariety,
     InventoryItem,
     Invoice,
+    Subscription,
     Vendor,
 )
 
@@ -39,7 +40,13 @@ class VendorForm(forms.ModelForm):
 class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
-        fields = ["name", "sub_name", "address"]
+        fields = ["name", "address"]
+
+
+class SubscriptionForm(forms.ModelForm):
+    class Meta:
+        model = Subscription
+        fields = ["customer", "sub_name"]
         labels = {"sub_name": "Sub-name (business or personal)"}
 
 
