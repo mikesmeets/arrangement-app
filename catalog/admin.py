@@ -49,8 +49,8 @@ class VendorAdmin(admin.ModelAdmin):
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ["name"]
-    search_fields = ["name"]
+    list_display = ["name", "phone"]
+    search_fields = ["name", "phone"]
 
 
 @admin.register(Subscription)

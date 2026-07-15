@@ -119,6 +119,7 @@ class Vendor(models.Model):
 
 class Customer(models.Model):
     name = models.CharField(max_length=150)
+    phone = models.CharField(max_length=30, blank=True)
     address = models.TextField(blank=True)
 
     class Meta:

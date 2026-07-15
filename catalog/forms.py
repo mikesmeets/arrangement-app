@@ -40,7 +40,7 @@ class VendorForm(forms.ModelForm):
 class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
-        fields = ["name", "address"]
+        fields = ["name", "phone", "address"]
 
 
 class SubscriptionForm(forms.ModelForm):
