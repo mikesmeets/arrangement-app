@@ -16,7 +16,7 @@
   <p><strong>Color:</strong> {{ flower.color }}</p>
   <p><strong>Type:</strong> {{ flower.get_type_display }}</p>
   <p><strong>Design category:</strong> {{ flower.get_design_category_display }}</p>
-  <p><strong>Currently on hand:</strong> {{ flower.quantity_on_hand }}</p>
+  <p><strong>Currently on hand:</strong> {{ flower.quantity_on_hand|floatformat:"-1" }}</p>
   <p><strong>Current avg cost:</strong> ${{ flower.current_avg_cost|floatformat:2 }}</p>
   </div>
 </div>
@@ -35,9 +35,9 @@
     </thead>
     <tbody>
       {% for row in rows %}
-      <tr>
-        <td>{{ row.item.date_received }}</td>
-        <td>{{ row.item.vendor }}</td>
+      <tr class="{% if row.item.invoice.expired %}inv-expired{% endif %}">
+        <td>{{ row.item.invoice.date }}</td>
+        <td>{{ row.item.invoice.vendor|default:"—" }}</td>
         <td>{{ row.item.quantity }}</td>
         <td>${{ row.item.per_stem_cost|floatformat:2 }}</td>
         <td>

@@ -7,7 +7,6 @@ from .models import (
     FlowerCategory,
     FlowerVariety,
     GlobalSettings,
-    InventoryItem,
     Invoice,
     InvoiceLineItem,
     Product,
@@ -68,23 +67,16 @@ class InvoiceLineItemInline(admin.TabularInline):
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ["vendor", "vendor_invoice_number", "date", "status"]
-    list_filter = ["status", "vendor"]
+    list_display = ["vendor", "vendor_invoice_number", "date", "status", "expired"]
+    list_filter = ["expired", "status", "vendor"]
     search_fields = ["vendor_invoice_number"]
     inlines = [InvoiceLineItemInline]
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ["name", "vendor", "flower", "quantity_on_hand", "current_avg_cost"]
+    list_display = ["name", "vendor", "flower", "quantity_in", "quantity_used", "quantity_on_hand", "current_avg_cost"]
     list_filter = ["vendor"]
-    search_fields = ["name"]
-
-
-@admin.register(InventoryItem)
-class InventoryItemAdmin(admin.ModelAdmin):
-    list_display = ["name", "product", "vendor", "quantity", "per_stem_cost", "date_received", "expired"]
-    list_filter = ["expired", "vendor", "flower__category"]
     search_fields = ["name"]
 
 

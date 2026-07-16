@@ -76,17 +76,15 @@ class Flower(models.Model):
 
     @property
     def current_avg_cost(self):
-        result = self.inventory_items.filter(expired=False).aggregate(
-            avg=models.Avg("per_stem_cost")
-        )
-        return result["avg"] or Decimal("0.00")
+        result = InvoiceLineItem.objects.filter(
+            product__flower=self, invoice__expired=False
+        ).aggregate(avg=models.Avg("per_stem_cost"))
+        avg = result["avg"]
+        return avg.quantize(Decimal("0.01")) if avg is not None else Decimal("0.00")
 
     @property
     def quantity_on_hand(self):
-        result = self.inventory_items.filter(expired=False).aggregate(
-            total=models.Sum("quantity")
-        )
-        return result["total"] or 0
+        return sum((p.quantity_on_hand for p in self.products.all()), Decimal("0"))
 
     @property
     def swatch_background(self):
@@ -179,18 +177,31 @@ class Product(models.Model):
         return f"{prefix} - {self.name}"
 
     @property
-    def current_avg_cost(self):
-        result = self.inventory_items.filter(expired=False).aggregate(
-            avg=models.Avg("per_stem_cost")
+    def quantity_in(self):
+        """Stems received, from the line items of unexpired invoices."""
+        result = self.line_items.filter(invoice__expired=False).aggregate(
+            total=models.Sum("quantity")
         )
-        return result["avg"] or Decimal("0.00")
+        return Decimal(result["total"] or 0)
+
+    @property
+    def quantity_used(self):
+        """Stems consumed by arrangements."""
+        result = self.arrangement_items.aggregate(total=models.Sum("quantity"))
+        return Decimal(result["total"] or 0)
 
     @property
     def quantity_on_hand(self):
-        result = self.inventory_items.filter(expired=False).aggregate(
-            total=models.Sum("quantity")
+        """Inventory is derived, never stored: what came in less what was used."""
+        return self.quantity_in - self.quantity_used
+
+    @property
+    def current_avg_cost(self):
+        result = self.line_items.filter(invoice__expired=False).aggregate(
+            avg=models.Avg("per_stem_cost")
         )
-        return result["total"] or 0
+        avg = result["avg"]
+        return avg.quantize(Decimal("0.01")) if avg is not None else Decimal("0.00")
 
 
 class Invoice(models.Model):
@@ -211,6 +222,10 @@ class Invoice(models.Model):
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING
     )
+    expired = models.BooleanField(
+        default=False, help_text="Perished delivery — its flowers stop counting as stock."
+    )
+    expired_on = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -235,6 +250,13 @@ class Invoice(models.Model):
 class InvoiceLineItem(models.Model):
     invoice = models.ForeignKey(
         Invoice, on_delete=models.CASCADE, related_name="line_items"
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="line_items",
     )
     name = models.CharField(max_length=150)
     quantity = models.PositiveIntegerField()
@@ -263,43 +285,6 @@ class InvoiceLineItem(models.Model):
             else Decimal("0.00")
         )
         super().save(*args, **kwargs)
-
-
-class InventoryItem(models.Model):
-    product = models.ForeignKey(
-        Product, on_delete=models.PROTECT, related_name="inventory_items"
-    )
-    flower = models.ForeignKey(
-        Flower,
-        on_delete=models.PROTECT,
-        related_name="inventory_items",
-        null=True,
-        blank=True,
-    )
-    vendor = models.ForeignKey(
-        Vendor, on_delete=models.PROTECT, related_name="inventory_items"
-    )
-    invoice = models.ForeignKey(
-        Invoice,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="inventory_items",
-    )
-    name = models.CharField(max_length=150)
-    size = models.CharField(max_length=50, blank=True)
-    grade = models.CharField(max_length=50, blank=True)
-    quantity = models.PositiveIntegerField(default=0)
-    per_stem_cost = models.DecimalField(max_digits=8, decimal_places=2)
-    date_received = models.DateField(default=timezone.now)
-    expired = models.BooleanField(default=False)
-    expired_on = models.DateField(null=True, blank=True)
-
-    class Meta:
-        ordering = ["-date_received"]
-
-    def __str__(self):
-        return f"{self.name} ({self.quantity} @ ${self.per_stem_cost})"
 
 
 class GlobalSettings(models.Model):

@@ -3,49 +3,36 @@
 <details class="collapse-group" {% if forloop.first %}open{% endif %}>
   <summary>
     <strong>{{ row.vendor.name }}</strong>
-    <span class="muted">{{ row.active_on_hand }} stems on hand</span>
+    <span class="muted">{{ row.on_hand|floatformat:"-1" }} stems on hand</span>
   </summary>
   <div class="collapse-body">
-    {% for d in row.deliveries %}
-    <div class="delivery{% if not d.active %} delivery-expired{% endif %}">
-      <div class="delivery-head">
-        <span class="delivery-label">
-          {% if d.invoice %}Invoice{% if d.invoice.vendor_invoice_number %} #{{ d.invoice.vendor_invoice_number }}{% endif %} &middot; {{ d.date }}{% else %}Received {{ d.date }}{% endif %}
-        </span>
-        {% if d.active %}
-          <button type="button" class="btn btn-danger"
-                  hx-post="{% url 'inventory-expire' %}"
-                  hx-vals='{% if d.invoice %}{"invoice": "{{ d.invoice.id }}"}{% else %}{"vendor": "{{ row.vendor.id }}", "date": "{{ d.date|date:"Y-m-d" }}"}{% endif %}'
-                  hx-target="#inventory-list" hx-swap="outerHTML">Mark expired</button>
-        {% else %}
-          <span class="muted">Expired</span>
-          <button type="button" class="btn btn-secondary"
-                  hx-post="{% url 'inventory-expire' %}"
-                  hx-vals='{% if d.invoice %}{"invoice": "{{ d.invoice.id }}", "restore": "1"}{% else %}{"vendor": "{{ row.vendor.id }}", "date": "{{ d.date|date:"Y-m-d" }}", "restore": "1"}{% endif %}'
-                  hx-target="#inventory-list" hx-swap="outerHTML">Restore</button>
-        {% endif %}
-      </div>
-      <table>
-        <thead>
-          <tr><th>Product</th><th>On hand</th><th>Per-stem cost</th></tr>
-        </thead>
-        <tbody>
-          {% for item in d.items %}
-          <tr class="{% if item.expired %}inv-expired{% endif %}">
-            <td>{{ item.product.label }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>${{ item.per_stem_cost|floatformat:2 }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% endfor %}
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>In</th>
+          <th>Used</th>
+          <th>On hand</th>
+          <th>Avg per-stem cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in row.products %}
+        <tr>
+          <td>{{ entry.product.label }}</td>
+          <td>{{ entry.came_in|floatformat:"-1" }}</td>
+          <td>{{ entry.used|floatformat:"-1" }}</td>
+          <td>{{ entry.on_hand|floatformat:"-1" }}</td>
+          <td>${{ entry.avg_cost|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </details>
 {% empty %}
 <div class="card">
-  <p class="muted">No inventory yet. Confirm an invoice to add stock, or <a href="{% url 'inventory-add' %}">add inventory by hand</a>.</p>
+  <p class="muted">No stock yet. <a href="{% url 'invoice-list' %}">Add an invoice</a>, or <a href="{% url 'inventory-add' %}">add stock by hand</a>.</p>
 </div>
 {% endfor %}
 </div>

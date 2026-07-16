@@ -12,9 +12,9 @@ from django.utils import timezone
 from .forms import (
     CustomerForm,
     FlowerForm,
-    InventoryItemForm,
     InvoiceFileForm,
     InvoiceForm,
+    ManualStockForm,
     SubscriptionForm,
     VendorForm,
 )
@@ -23,7 +23,6 @@ from .models import (
     Customer,
     Flower,
     FlowerCategory,
-    InventoryItem,
     Invoice,
     InvoiceLineItem,
     Product,
@@ -34,34 +33,34 @@ from .thumbnails import render_thumbnail
 
 
 def _inventory_vendor_rows():
-    """Inventory grouped by vendor, then by delivery, for the collapsible
-    inventory screen. A delivery is the source invoice, or — for hand-entered
-    stock with no invoice — the received date. Expiration acts per delivery."""
-    items = (
-        InventoryItem.objects.select_related("vendor", "product", "invoice")
-        .order_by("vendor__name", "-date_received", "product__name")
+    """The inventory report. Nothing is stored: each product's stock is what its
+    invoice line items brought in (ignoring expired invoices) less what
+    arrangements consumed. Grouped by vendor for the collapsible screen."""
+    products = (
+        Product.objects.select_related("vendor", "flower__variety")
+        .prefetch_related("line_items__invoice", "arrangement_items")
+        .order_by("vendor__name", "name")
     )
     vendor_rows = []
-    vcur = None
-    for item in items:
-        if vcur is None or vcur["vendor"] != item.vendor:
-            vcur = {"vendor": item.vendor, "deliveries": [], "active_on_hand": 0}
-            vendor_rows.append(vcur)
-        key = f"inv-{item.invoice_id}" if item.invoice_id else f"date-{item.date_received}"
-        delivery = next((d for d in vcur["deliveries"] if d["key"] == key), None)
-        if delivery is None:
-            delivery = {
-                "key": key,
-                "invoice": item.invoice,
-                "date": item.date_received,
-                "items": [],
-                "active": False,
+    current = None
+    for product in products:
+        came_in = product.quantity_in
+        used = product.quantity_used
+        if not came_in and not used:
+            continue
+        if current is None or current["vendor"] != product.vendor:
+            current = {"vendor": product.vendor, "products": [], "on_hand": Decimal("0")}
+            vendor_rows.append(current)
+        current["products"].append(
+            {
+                "product": product,
+                "came_in": came_in,
+                "used": used,
+                "on_hand": came_in - used,
+                "avg_cost": product.current_avg_cost,
             }
-            vcur["deliveries"].append(delivery)
-        delivery["items"].append(item)
-        if not item.expired:
-            delivery["active"] = True
-            vcur["active_on_hand"] += item.quantity
+        )
+        current["on_hand"] += came_in - used
     return vendor_rows
 
 
@@ -70,33 +69,6 @@ def inventory_list(request):
     return render(
         request,
         "catalog/inventory_list.html",
-        {"vendor_rows": _inventory_vendor_rows()},
-    )
-
-
-@login_required
-def inventory_expire(request):
-    """Expire (or restore) every inventory item in a delivery — an invoice, or a
-    vendor's hand-entered stock from a given received date."""
-    if request.method == "POST":
-        invoice_id = request.POST.get("invoice")
-        vendor_id = request.POST.get("vendor")
-        date = request.POST.get("date")
-        if invoice_id:
-            items = InventoryItem.objects.filter(invoice_id=invoice_id)
-        elif vendor_id and date:
-            items = InventoryItem.objects.filter(
-                invoice__isnull=True, vendor_id=vendor_id, date_received=date
-            )
-        else:
-            items = InventoryItem.objects.none()
-        if request.POST.get("restore") == "1":
-            items.update(expired=False, expired_on=None)
-        else:
-            items.update(expired=True, expired_on=timezone.localdate())
-    return render(
-        request,
-        "catalog/_inventory_vendors.html",
         {"vendor_rows": _inventory_vendor_rows()},
     )
 
@@ -115,16 +87,33 @@ def _product_for(vendor, name, flower=None):
 
 @login_required
 def inventory_add(request):
+    """Hand-entered stock is saved as a one-line invoice — invoices are the only
+    source of stock, so there's nowhere else for it to live."""
     if request.method == "POST":
-        form = InventoryItemForm(request.POST)
+        form = ManualStockForm(request.POST)
         if form.is_valid():
-            item = form.save(commit=False)
-            item.product = _product_for(item.vendor, item.name, item.flower)
-            item.save()
-            messages.success(request, "Inventory added.")
+            data = form.cleaned_data
+            product = _product_for(data["vendor"], data["name"], data["flower"])
+            invoice = Invoice.objects.create(
+                vendor=data["vendor"],
+                date=data["date_received"],
+                status=Invoice.STATUS_CONFIRMED,
+            )
+            quantity = data["quantity"]
+            InvoiceLineItem.objects.create(
+                invoice=invoice,
+                product=product,
+                name=data["name"],
+                quantity=quantity,
+                total_cost=data["per_stem_cost"] * quantity,
+                flower=data["flower"],
+                size=data["size"],
+                grade=data["grade"],
+            )
+            messages.success(request, "Stock added as a one-line invoice.")
             return redirect("inventory-list")
     else:
-        form = InventoryItemForm()
+        form = ManualStockForm()
     return render(request, "catalog/inventory_form.html", {"form": form})
 
 
@@ -390,7 +379,9 @@ def flower_detail(request, pk):
         Flower.objects.select_related("category", "variety"), pk=pk
     )
     history = list(
-        flower.inventory_items.select_related("vendor").order_by("date_received")
+        InvoiceLineItem.objects.filter(product__flower=flower)
+        .select_related("invoice__vendor")
+        .order_by("invoice__date")
     )
     rows = []
     prev_cost = None
@@ -467,6 +458,23 @@ def flower_edit(request, pk):
 def invoice_list(request):
     invoices = Invoice.objects.select_related("vendor").prefetch_related("line_items")
     return render(request, "catalog/invoice_list.html", {"invoices": invoices})
+
+
+@login_required
+def invoice_expire(request, pk):
+    """Mark a delivery perished (or restore it). An expired invoice's line items
+    stop counting toward stock and arrangement pricing."""
+    invoice = get_object_or_404(Invoice, pk=pk)
+    if request.method == "POST":
+        if request.POST.get("restore") == "1":
+            invoice.expired = False
+            invoice.expired_on = None
+        else:
+            invoice.expired = True
+            invoice.expired_on = timezone.localdate()
+        invoice.save(update_fields=["expired", "expired_on"])
+    invoices = Invoice.objects.select_related("vendor").prefetch_related("line_items")
+    return render(request, "catalog/_invoice_rows.html", {"invoices": invoices})
 
 
 def _suggest_flower(name):
@@ -614,27 +622,18 @@ def invoice_review(request, pk):
             for line_item in new_and_changed:
                 line_item.invoice = invoice
                 line_item.save()
+            # Stock is derived from these line items — nothing is copied into a
+            # separate table, so re-confirming an edited invoice can't duplicate.
             added = 0
             for line_item in invoice.line_items.select_related("flower"):
-                product = _product_for(invoice.vendor, line_item.name, line_item.flower)
-                InventoryItem.objects.create(
-                    product=product,
-                    flower=line_item.flower,
-                    vendor=invoice.vendor,
-                    invoice=invoice,
-                    name=line_item.name,
-                    size=line_item.size,
-                    grade=line_item.grade,
-                    quantity=line_item.quantity,
-                    per_stem_cost=line_item.per_stem_cost,
-                    date_received=invoice.date,
+                line_item.product = _product_for(
+                    invoice.vendor, line_item.name, line_item.flower
                 )
+                line_item.save(update_fields=["product"])
                 added += 1
             invoice.status = Invoice.STATUS_CONFIRMED
             invoice.save()
-            messages.success(
-                request, f"Confirmed. {added} item(s) added to inventory."
-            )
+            messages.success(request, f"Confirmed. {added} line item(s) in stock.")
             return redirect("inventory-list")
 
     else:

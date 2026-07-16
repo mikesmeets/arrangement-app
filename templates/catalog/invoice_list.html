@@ -9,34 +9,6 @@
   </form>
 </div>
 
-<div class="card">
-  <table>
-    <thead>
-      <tr>
-        <th>Vendor</th>
-        <th>Invoice #</th>
-        <th>Date</th>
-        <th>Total cost</th>
-        <th>Status</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for invoice in invoices %}
-      <tr>
-        <td>{{ invoice.vendor|default:"—" }}</td>
-        <td>{{ invoice.vendor_invoice_number|default:"—" }}</td>
-        <td>{{ invoice.date }}</td>
-        <td>${{ invoice.total_cost|floatformat:2 }}</td>
-        <td>{{ invoice.get_status_display }}</td>
-        <td><a class="btn" href="{% url 'invoice-review' invoice.pk %}">
-          {% if invoice.status == invoice.STATUS_CONFIRMED %}View{% else %}Review{% endif %}
-        </a></td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="6" class="muted">No invoices yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<p class="muted">An invoice's line items are your stock. Mark a delivery expired when it perishes — its flowers drop out of inventory and arrangement pricing.</p>
+{% include "catalog/_invoice_rows.html" %}
 {% endblock %}

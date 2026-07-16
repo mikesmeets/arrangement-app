@@ -84,8 +84,8 @@ def _recent_invoice_products():
     fall into a per-vendor group so every in-stock product stays addable."""
     invoices = (
         Invoice.objects.select_related("vendor")
-        .prefetch_related("inventory_items__product__vendor", "inventory_items__product__flower__variety")
-        .filter(inventory_items__expired=False)
+        .prefetch_related("line_items__product__vendor", "line_items__product__flower__variety")
+        .filter(expired=False, line_items__product__isnull=False)
         .distinct()
         .order_by("-date", "-created_at")
     )
@@ -94,10 +94,8 @@ def _recent_invoice_products():
     for invoice in invoices:
         products = []
         seen = set()
-        for inv_item in invoice.inventory_items.all():
-            if inv_item.expired:
-                continue
-            product = inv_item.product
+        for line_item in invoice.line_items.all():
+            product = line_item.product
             if product and product.id not in seen:
                 seen.add(product.id)
                 products.append(product)
@@ -109,7 +107,7 @@ def _recent_invoice_products():
 
     leftover = (
         Product.objects.select_related("vendor", "flower__variety")
-        .filter(inventory_items__expired=False)
+        .filter(line_items__invoice__expired=False)
         .exclude(id__in=surfaced)
         .distinct()
         .order_by("vendor__name", "name")

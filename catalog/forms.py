@@ -5,29 +5,28 @@ from .models import (
     Flower,
     FlowerCategory,
     FlowerVariety,
-    InventoryItem,
     Invoice,
     Subscription,
     Vendor,
 )
 
 
-class InventoryItemForm(forms.ModelForm):
-    class Meta:
-        model = InventoryItem
-        fields = [
-            "vendor",
-            "flower",
-            "name",
-            "size",
-            "grade",
-            "quantity",
-            "per_stem_cost",
-            "date_received",
-        ]
-        widgets = {
-            "date_received": forms.DateInput(attrs={"type": "date"}),
-        }
+class ManualStockForm(forms.Form):
+    """Hand-entered stock. There's no inventory table — this is saved as a
+    one-line invoice for the vendor, which is what stock is derived from."""
+
+    vendor = forms.ModelChoiceField(queryset=Vendor.objects.all())
+    name = forms.CharField(max_length=150, label="Product name")
+    flower = forms.ModelChoiceField(
+        queryset=Flower.objects.select_related("variety"),
+        required=False,
+        label="Flower (taxonomy, optional)",
+    )
+    size = forms.CharField(max_length=50, required=False)
+    grade = forms.CharField(max_length=50, required=False)
+    quantity = forms.IntegerField(min_value=0)
+    per_stem_cost = forms.DecimalField(max_digits=8, decimal_places=2, min_value=0)
+    date_received = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
 
 
 class VendorForm(forms.ModelForm):
