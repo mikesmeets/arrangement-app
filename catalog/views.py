@@ -49,8 +49,16 @@ def _inventory_vendor_rows():
         if not came_in and not used:
             continue
         if current is None or current["vendor"] != product.vendor:
-            current = {"vendor": product.vendor, "products": [], "on_hand": Decimal("0")}
+            current = {
+                "vendor": product.vendor,
+                "products": [],
+                "on_hand": Decimal("0"),
+                "value_in": Decimal("0.00"),
+                "value_used": Decimal("0.00"),
+            }
             vendor_rows.append(current)
+        value_in = product.value_in
+        value_used = product.value_used
         current["products"].append(
             {
                 "product": product,
@@ -58,9 +66,19 @@ def _inventory_vendor_rows():
                 "used": used,
                 "on_hand": came_in - used,
                 "avg_cost": product.current_avg_cost,
+                "value_in": value_in,
+                "value_used": value_used,
+                "usage_pct": (value_used / value_in * 100) if value_in else None,
             }
         )
         current["on_hand"] += came_in - used
+        current["value_in"] += value_in
+        current["value_used"] += value_used
+
+    for row in vendor_rows:
+        row["usage_pct"] = (
+            row["value_used"] / row["value_in"] * 100 if row["value_in"] else None
+        )
     return vendor_rows
 
 

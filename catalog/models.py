@@ -203,6 +203,26 @@ class Product(models.Model):
         avg = result["avg"]
         return avg.quantize(Decimal("0.01")) if avg is not None else Decimal("0.00")
 
+    @property
+    def value_in(self):
+        """What this product cost across unexpired invoices."""
+        result = self.line_items.filter(invoice__expired=False).aggregate(
+            total=models.Sum("total_cost")
+        )
+        return result["total"] or Decimal("0.00")
+
+    @property
+    def value_used(self):
+        """Dollar value of the stems arrangements consumed."""
+        return (self.quantity_used * self.current_avg_cost).quantize(Decimal("0.01"))
+
+    @property
+    def usage_ratio(self):
+        """Share of spend consumed — None when nothing was bought."""
+        if not self.value_in:
+            return None
+        return self.value_used / self.value_in
+
 
 class Invoice(models.Model):
     STATUS_PENDING = "pending_review"
