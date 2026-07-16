@@ -14,9 +14,6 @@
           <th>Used</th>
           <th>On hand</th>
           <th>Avg per-stem cost</th>
-          <th>Used $</th>
-          <th>Invoice value</th>
-          <th>% used</th>
         </tr>
       </thead>
       <tbody>
@@ -27,24 +24,9 @@
           <td>{{ entry.used|floatformat:"-1" }}</td>
           <td>{{ entry.on_hand|floatformat:"-1" }}</td>
           <td>${{ entry.avg_cost|floatformat:2 }}</td>
-          <td>${{ entry.value_used|floatformat:2 }}</td>
-          <td>${{ entry.value_in|floatformat:2 }}</td>
-          <td>{% if entry.usage_pct is not None %}{{ entry.usage_pct|floatformat:0 }}%{% else %}<span class="muted">—</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
-      <tfoot>
-        <tr>
-          <th style="text-align:right;">Total</th>
-          <th></th>
-          <th></th>
-          <th>{{ row.on_hand|floatformat:"-1" }}</th>
-          <th></th>
-          <th>${{ row.value_used|floatformat:2 }}</th>
-          <th>${{ row.value_in|floatformat:2 }}</th>
-          <th>{% if row.usage_pct is not None %}{{ row.usage_pct|floatformat:0 }}%{% else %}—{% endif %}</th>
-        </tr>
-      </tfoot>
     </table>
   </div>
 </details>

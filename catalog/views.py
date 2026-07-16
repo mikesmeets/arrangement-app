@@ -66,9 +66,6 @@ def _inventory_vendor_rows():
                 "used": used,
                 "on_hand": came_in - used,
                 "avg_cost": product.current_avg_cost,
-                "value_in": value_in,
-                "value_used": value_used,
-                "usage_pct": (value_used / value_in * 100) if value_in else None,
             }
         )
         current["on_hand"] += came_in - used
