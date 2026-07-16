@@ -477,6 +477,16 @@ def invoice_list(request):
 
 
 @login_required
+def invoice_delete(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk)
+    if request.method == "POST":
+        invoice.delete()
+        messages.success(request, "Invoice deleted.")
+        return redirect("invoice-list")
+    return redirect("invoice-review", pk=pk)
+
+
+@login_required
 def invoice_expire(request, pk):
     """Mark a delivery perished (or restore it). An expired invoice's line items
     stop counting toward stock and arrangement pricing."""
@@ -630,6 +640,7 @@ def invoice_review(request, pk):
         details_form = InvoiceForm(instance=invoice)
         file_form = InvoiceFileForm(instance=invoice)
         formset = InvoiceLineItemFormSet(request.POST, queryset=queryset)
+        was_new = invoice.status != Invoice.STATUS_CONFIRMED
         if not invoice.vendor_id:
             messages.error(request, "Pick a vendor before confirming.")
         elif formset.is_valid():
@@ -650,7 +661,10 @@ def invoice_review(request, pk):
                 added += 1
             invoice.status = Invoice.STATUS_CONFIRMED
             invoice.save()
-            messages.success(request, f"Confirmed. {added} line item(s) in stock.")
+            verb = "created" if was_new else "updated"
+            messages.success(
+                request, f"Invoice {verb}. {added} line item(s) in stock."
+            )
             return redirect("inventory-list")
 
     else:

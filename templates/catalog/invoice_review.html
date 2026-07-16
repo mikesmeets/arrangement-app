@@ -99,10 +99,39 @@
     </table>
     <script type="text/template" id="empty-line-item-row">{% with line_form=formset.empty_form %}{% include "catalog/_line_item_row.html" %}{% endwith %}</script>
     <p class="muted">Fill in a row's name, quantity, and total cost — a fresh blank row appears as you go. Use the &times; to drop a row. Per-stem cost is calculated from total cost &divide; qty once you save. Leave "Flower" blank on a row to skip adding it to inventory. Don't see the right flower? Use the "+ Add Flower" button above.</p>
-    <button type="submit" class="btn" name="confirm" value="1" style="margin-top:1rem;">Confirm &amp; Add to Inventory</button>
-    <a class="btn btn-secondary" href="{% url 'invoice-list' %}">Cancel</a>
+    {% if invoice.status == invoice.STATUS_CONFIRMED %}
+      <button type="submit" class="btn" name="confirm" value="1" style="margin-top:1rem;">Update</button>
+      <a class="btn btn-secondary" href="{% url 'invoice-list' %}">Cancel</a>
+    {% else %}
+      <button type="submit" class="btn" name="confirm" value="1" style="margin-top:1rem;">Create</button>
+      <button type="button" class="btn btn-danger" onclick="showDeleteInvoice();">Delete</button>
+    {% endif %}
   </form>
 </div>
+
+{% if invoice.status != invoice.STATUS_CONFIRMED %}
+<div id="delete-invoice-modal" class="modal-backdrop" style="display:none;"
+     onclick="if(event.target===this)hideDeleteInvoice();">
+  <div class="modal-box">
+    <h2 style="margin-top:0;">Delete this invoice?</h2>
+    <p class="muted">
+      {% with count=invoice.line_items.count %}
+        {% if count %}Its {{ count }} line item{{ count|pluralize }} will go too, and any stock they brought in leaves inventory.{% else %}It has no line items yet.{% endif %}
+      {% endwith %}
+      This can't be undone.
+    </p>
+    <form method="post" action="{% url 'invoice-delete' invoice.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Yes, delete it</button>
+      <button type="button" class="btn btn-secondary" onclick="hideDeleteInvoice();">Keep it</button>
+    </form>
+  </div>
+</div>
+<script>
+  function showDeleteInvoice() { document.getElementById('delete-invoice-modal').style.display = 'flex'; }
+  function hideDeleteInvoice() { document.getElementById('delete-invoice-modal').style.display = 'none'; }
+</script>
+{% endif %}
 
 <script>
   (function () {
