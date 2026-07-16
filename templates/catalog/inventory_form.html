@@ -1,18 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Add Inventory — TreBlooms{% endblock %}
 {% block content %}
-<div style="display:flex;justify-content:space-between;align-items:center;">
-  <h1>Add Inventory</h1>
-  <button type="button" class="btn" hx-get="{% url 'vendor-add' %}" hx-target="#modal-root" hx-swap="innerHTML">+ Add Vendor</button>
-</div>
+<h1>Add Inventory</h1>
+<p class="muted">Saved as a one-line invoice — invoices are what stock is derived from.</p>
 <div class="card">
   <form method="post">
     {% csrf_token %}
-    {% for field in form %}
-      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-      {{ field }}
-      {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
-    {% endfor %}
+    {% include "_form_fields.html" %}
     <button type="submit" class="btn" style="margin-top:1rem;">Save</button>
     <a class="btn btn-secondary" href="{% url 'inventory-list' %}">Cancel</a>
   </form>

@@ -254,6 +254,7 @@
       cursor: pointer;
     }
     .mode-btn-active { border-color: var(--pink); background: var(--pink); color: white; }
+    .inline-new { display: none; }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
@@ -303,6 +304,47 @@
           });
       });
     }
+    // Entity selects end with "+ Create new…"; picking it reveals the matching
+    // new_<field> line to type a name, created on submit. Convention:
+    // <select name="x"> pairs with the input id_new_x.
+    var INLINE_NEW = '__new__';
+    function wireInlineCreate(root) {
+      (root || document).querySelectorAll('select[data-inline-create]').forEach(function (select) {
+        if (select.dataset.inlineWired) return;
+        var input = document.getElementById('id_new_' + select.name);
+        if (!input) return;
+        var line = input.closest('.inline-new');
+        if (!line) return;
+        select.dataset.inlineWired = '1';
+
+        var option = document.createElement('option');
+        option.value = INLINE_NEW;
+        option.textContent = '+ Create new…';
+        select.appendChild(option);
+
+        function sync(focus) {
+          var creating = select.value === INLINE_NEW;
+          line.style.display = creating ? 'block' : 'none';
+          if (!creating) input.value = '';
+          else if (focus) input.focus();
+        }
+        select.addEventListener('change', function () { sync(true); });
+        if (select.form) {
+          // The sentinel must never reach the server.
+          select.form.addEventListener('submit', function () {
+            if (select.value === INLINE_NEW) select.value = '';
+          });
+        }
+        // Re-entering the creating state after a validation error.
+        if (input.value) select.value = INLINE_NEW;
+        sync(false);
+      });
+    }
+    wireInlineCreate(document);
+    document.body.addEventListener('htmx:afterSwap', function (evt) {
+      wireInlineCreate(evt.target);
+    });
+
     refreshSelectOptions('flower-added', 'select[name$="-flower"]', '{% url "flower-options" %}', false);
     refreshSelectOptions('vendor-added', 'select[name="vendor"]', '{% url "vendor-options" %}', true);
     refreshSelectOptions('customer-added', 'select[name="customer"]', '{% url "customer-options" %}', true);

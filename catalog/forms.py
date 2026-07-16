@@ -11,11 +11,33 @@ from .models import (
 )
 
 
+def inline_create_select():
+    """A select whose list ends with "+ Create new…"; picking it reveals the
+    matching new_<field> input. Paired up client-side by field name."""
+    return forms.Select(attrs={"data-inline-create": "1"})
+
+
+def resolve_inline_create(form, cleaned, field, model, required_message):
+    """Use the typed new_<field> name to get-or-create the record, otherwise
+    fall back to whatever was picked in the select."""
+    typed = (cleaned.get(f"new_{field}") or "").strip()
+    chosen = cleaned.get(field)
+    if typed:
+        chosen, _ = model.objects.get_or_create(name=typed)
+        cleaned[field] = chosen
+    if not chosen:
+        form.add_error(field, required_message)
+    return chosen
+
+
 class ManualStockForm(forms.Form):
     """Hand-entered stock. There's no inventory table — this is saved as a
     one-line invoice for the vendor, which is what stock is derived from."""
 
-    vendor = forms.ModelChoiceField(queryset=Vendor.objects.all())
+    vendor = forms.ModelChoiceField(
+        queryset=Vendor.objects.all(), required=False, widget=inline_create_select()
+    )
+    new_vendor = forms.CharField(required=False, label="New vendor name")
     name = forms.CharField(max_length=150, label="Product name")
     flower = forms.ModelChoiceField(
         queryset=Flower.objects.select_related("variety"),
@@ -27,6 +49,13 @@ class ManualStockForm(forms.Form):
     quantity = forms.IntegerField(min_value=0)
     per_stem_cost = forms.DecimalField(max_digits=8, decimal_places=2, min_value=0)
     date_received = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
+
+    def clean(self):
+        cleaned = super().clean()
+        resolve_inline_create(
+            self, cleaned, "vendor", Vendor, "Choose a vendor or create a new one."
+        )
+        return cleaned
 
 
 class VendorForm(forms.ModelForm):
@@ -43,22 +72,46 @@ class CustomerForm(forms.ModelForm):
 
 
 class SubscriptionForm(forms.ModelForm):
+    customer = forms.ModelChoiceField(
+        queryset=Customer.objects.all(), required=False, widget=inline_create_select()
+    )
+    new_customer = forms.CharField(required=False, label="New customer name")
+
     class Meta:
         model = Subscription
-        fields = ["customer", "sub_name", "current_price"]
+        fields = ["customer", "new_customer", "sub_name", "current_price"]
         labels = {"sub_name": "Sub-name (business or personal)"}
+
+    def clean(self):
+        cleaned = super().clean()
+        resolve_inline_create(
+            self, cleaned, "customer", Customer, "Choose a customer or create a new one."
+        )
+        return cleaned
 
 
 class InvoiceForm(forms.ModelForm):
+    new_vendor = forms.CharField(required=False, label="New vendor name")
+
     class Meta:
         model = Invoice
-        fields = ["vendor", "vendor_invoice_number", "date"]
+        fields = ["vendor", "new_vendor", "vendor_invoice_number", "date"]
         labels = {
             "vendor_invoice_number": "Vendor invoice #",
         }
         widgets = {
             "date": forms.DateInput(attrs={"type": "date"}),
+            "vendor": inline_create_select(),
         }
+
+    def clean(self):
+        cleaned = super().clean()
+        # The vendor stays optional on an invoice, so only create when typed.
+        typed = (cleaned.get("new_vendor") or "").strip()
+        if typed:
+            vendor, _ = Vendor.objects.get_or_create(name=typed)
+            cleaned["vendor"] = vendor
+        return cleaned
 
 
 class InvoiceFileForm(forms.ModelForm):
@@ -72,15 +125,19 @@ class InvoiceFileForm(forms.ModelForm):
 
 class FlowerForm(forms.ModelForm):
     category = forms.ModelChoiceField(
-        queryset=FlowerCategory.objects.all(), required=False, label="Category"
+        queryset=FlowerCategory.objects.all(),
+        required=False,
+        label="Category",
+        widget=inline_create_select(),
     )
-    new_category = forms.CharField(required=False, label="Or new category")
+    new_category = forms.CharField(required=False, label="New category name")
     variety = forms.ModelChoiceField(
         queryset=FlowerVariety.objects.select_related("category"),
         required=False,
         label="Variety",
+        widget=inline_create_select(),
     )
-    new_variety = forms.CharField(required=False, label="Or new variety")
+    new_variety = forms.CharField(required=False, label="New variety name")
 
     class Meta:
         model = Flower

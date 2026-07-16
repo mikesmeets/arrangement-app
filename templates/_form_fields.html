@@ -1,0 +1,17 @@
+{% comment %}
+Renders a form's fields. A field named new_<x> is wrapped in .inline-new so the
+"+ Create new…" option on the matching <select name="x"> can reveal it.
+{% endcomment %}
+{% for field in form %}
+  {% if field.name|slice:":4" == "new_" %}
+    <div class="inline-new">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+  {% else %}
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  {% endif %}
+{% endfor %}

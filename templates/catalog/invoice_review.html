@@ -30,17 +30,10 @@
 </div>
 
 <div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h2>Details</h2>
-    <button type="button" class="btn" hx-get="{% url 'vendor-add' %}" hx-target="#modal-root" hx-swap="innerHTML">+ Add Vendor</button>
-  </div>
+  <h2>Details</h2>
   <form method="post">
     {% csrf_token %}
-    {% for field in form %}
-      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-      {{ field }}
-      {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
-    {% endfor %}
+    {% include "_form_fields.html" %}
     <button type="submit" class="btn" name="save_details" value="1" style="margin-top:1rem;">Save Details</button>
   </form>
 </div>
@@ -57,12 +50,25 @@
   {% else %}
   <p>That vendor isn't on file yet.
     <button type="button" class="btn"
-            hx-get="{% url 'vendor-add' %}?name={{ invoice.raw_extracted_data.vendor_name|urlencode }}"
-            hx-target="#modal-root" hx-swap="innerHTML">Create "{{ invoice.raw_extracted_data.vendor_name }}"</button>
+            onclick="createVendorInline('{{ invoice.raw_extracted_data.vendor_name|escapejs }}')">Create "{{ invoice.raw_extracted_data.vendor_name }}"</button>
   </p>
   {% endif %}
 </div>
 {% endif %}
+
+<script>
+  // Drop the extracted vendor name straight into the Details form's inline
+  // "create new vendor" line, rather than opening a separate dialog.
+  function createVendorInline(name) {
+    var select = document.querySelector('select[name="vendor"]');
+    var input = document.getElementById('id_new_vendor');
+    if (!select || !input) return;
+    select.value = '__new__';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    input.value = name;
+    input.focus();
+  }
+</script>
 
 <div class="card">
   <div style="display:flex;justify-content:space-between;align-items:center;">
