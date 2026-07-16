@@ -56,7 +56,19 @@ def arrangement_edit(request, pk):
             "arrangement": arrangement,
             "form": form,
             "invoice_rows": _recent_invoice_products(),
+            "hard_goods": _hard_good_products(),
         },
+    )
+
+
+def _hard_good_products():
+    """Every hard good still in stock, in one group — you reach for a vase
+    directly rather than browsing it by delivery."""
+    return (
+        Product.objects.select_related("vendor")
+        .filter(kind=Product.KIND_HARD_GOOD, line_items__invoice__expired=False)
+        .distinct()
+        .order_by("vendor__name", "name")
     )
 
 
@@ -85,7 +97,11 @@ def _recent_invoice_products():
     invoices = (
         Invoice.objects.select_related("vendor")
         .prefetch_related("line_items__product__vendor", "line_items__product__flower__variety")
-        .filter(expired=False, line_items__product__isnull=False)
+        .filter(
+            expired=False,
+            line_items__product__isnull=False,
+            line_items__product__kind=Product.KIND_FLOWER,
+        )
         .distinct()
         .order_by("-date", "-created_at")
     )
@@ -96,7 +112,9 @@ def _recent_invoice_products():
         seen = set()
         for line_item in invoice.line_items.all():
             product = line_item.product
-            if product and product.id not in seen:
+            if not product or product.kind != Product.KIND_FLOWER:
+                continue
+            if product.id not in seen:
                 seen.add(product.id)
                 products.append(product)
                 surfaced.add(product.id)
@@ -107,7 +125,7 @@ def _recent_invoice_products():
 
     leftover = (
         Product.objects.select_related("vendor", "flower__variety")
-        .filter(line_items__invoice__expired=False)
+        .filter(line_items__invoice__expired=False, kind=Product.KIND_FLOWER)
         .exclude(id__in=surfaced)
         .distinct()
         .order_by("vendor__name", "name")

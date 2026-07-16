@@ -7,6 +7,7 @@ from .models import (
     FlowerVariety,
     Invoice,
     InvoiceLineItem,
+    Product,
     Subscription,
     Vendor,
 )
@@ -40,6 +41,7 @@ class ManualStockForm(forms.Form):
     )
     new_vendor = forms.CharField(required=False, label="New vendor name")
     name = forms.CharField(max_length=150, label="Product name")
+    kind = forms.ChoiceField(choices=Product.KIND_CHOICES, label="Type")
     flower = forms.ModelChoiceField(
         queryset=Flower.objects.select_related("variety"),
         required=False,
@@ -131,7 +133,7 @@ class InvoiceLineItemForm(forms.ModelForm):
 
     class Meta:
         model = InvoiceLineItem
-        fields = ["name", "quantity", "total_cost", "flower", "size", "grade"]
+        fields = ["name", "kind", "quantity", "total_cost", "flower", "size", "grade"]
 
 
 class InvoiceFileForm(forms.ModelForm):

@@ -1,5 +1,6 @@
 <tr class="line-item-row">
   <td>{{ line_form.id }}{{ line_form.name }}</td>
+  <td>{{ line_form.kind }}</td>
   <td>{{ line_form.quantity }}</td>
   <td>{{ line_form.total_cost }}</td>
   <td>{% if line_form.instance.pk %}${{ line_form.instance.per_stem_cost }}{% else %}<span class="muted">—</span>{% endif %}</td>

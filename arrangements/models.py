@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import models
 from django.utils import timezone
 
-from catalog.models import Flower, GlobalSettings, Product, Subscription
+from catalog.models import Flower, GlobalSettings, Product, Subscription  # noqa: F401
 
 
 class Arrangement(models.Model):
@@ -93,15 +93,36 @@ class Arrangement(models.Model):
         return GlobalSettings.get_solo().markup_multiplier
 
     @property
-    def flower_cost(self):
+    def hard_good_markup(self):
+        return GlobalSettings.get_solo().hard_good_markup_multiplier
+
+    def _cost_of(self, kind):
         total = Decimal("0.00")
         for item in self.items.select_related("product"):
-            total += item.product.current_avg_cost * item.quantity
+            if item.product.kind == kind:
+                total += item.product.current_avg_cost * item.quantity
         return total
 
     @property
+    def flower_cost(self):
+        return self._cost_of(Product.KIND_FLOWER)
+
+    @property
+    def hard_good_cost(self):
+        return self._cost_of(Product.KIND_HARD_GOOD)
+
+    @property
+    def total_cost(self):
+        return self.flower_cost + self.hard_good_cost
+
+    @property
     def suggested_price(self):
-        return (self.flower_cost * self.markup).quantize(Decimal("0.01"))
+        """Each bucket earns its own markup — hard goods carry a lower one."""
+        priced = (
+            self.flower_cost * self.markup
+            + self.hard_good_cost * self.hard_good_markup
+        )
+        return priced.quantize(Decimal("0.01"))
 
     @property
     def actual_price(self):
@@ -111,17 +132,26 @@ class Arrangement(models.Model):
 
     @property
     def price_multiple(self):
-        if self.flower_cost == 0:
+        cost = self.total_cost
+        if cost == 0:
             return None
-        return (self.actual_price / self.flower_cost).quantize(Decimal("0.01"))
+        return (self.actual_price / cost).quantize(Decimal("0.01"))
+
+    @property
+    def suggested_price_multiple(self):
+        """The blended multiple — hard goods pull it below the flower markup."""
+        cost = self.total_cost
+        if cost == 0:
+            return None
+        return (self.suggested_price / cost).quantize(Decimal("0.01"))
 
     @property
     def profit_at_suggested_price(self):
-        return (self.suggested_price - self.flower_cost).quantize(Decimal("0.01"))
+        return (self.suggested_price - self.total_cost).quantize(Decimal("0.01"))
 
     @property
     def profit(self):
-        return (self.actual_price - self.flower_cost).quantize(Decimal("0.01"))
+        return (self.actual_price - self.total_cost).quantize(Decimal("0.01"))
 
 
 class ArrangementItem(models.Model):

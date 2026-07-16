@@ -156,8 +156,21 @@ class Product(models.Model):
     used just in the arrangement maker. The Flower taxonomy link is optional, so
     the app works without it."""
 
+    KIND_FLOWER = "flower"
+    KIND_HARD_GOOD = "hard_good"
+    KIND_CHOICES = [
+        (KIND_FLOWER, "Flower"),
+        (KIND_HARD_GOOD, "Hard good"),
+    ]
+
     vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="products")
     name = models.CharField(max_length=150)
+    kind = models.CharField(
+        max_length=20,
+        choices=KIND_CHOICES,
+        default=KIND_FLOWER,
+        help_text="Hard goods (vases, ribbon) price at the lower hard-good markup.",
+    )
     flower = models.ForeignKey(
         Flower,
         on_delete=models.SET_NULL,
@@ -283,6 +296,9 @@ class InvoiceLineItem(models.Model):
         blank=True,
         related_name="line_items",
     )
+    kind = models.CharField(
+        max_length=20, choices=Product.KIND_CHOICES, default=Product.KIND_FLOWER
+    )
     name = models.CharField(max_length=150)
     quantity = models.PositiveIntegerField()
     total_cost = models.DecimalField(max_digits=8, decimal_places=2)
@@ -314,12 +330,21 @@ class InvoiceLineItem(models.Model):
 
 class GlobalSettings(models.Model):
     markup_multiplier = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("4.00"))
+    hard_good_markup_multiplier = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("2.00"),
+        help_text="Markup for hard goods (vases, ribbon) — typically lower than flowers.",
+    )
 
     class Meta:
         verbose_name_plural = "global settings"
 
     def __str__(self):
-        return f"Global settings (markup x{self.markup_multiplier})"
+        return (
+            f"Global settings (flowers x{self.markup_multiplier}, "
+            f"hard goods x{self.hard_good_markup_multiplier})"
+        )
 
     def save(self, *args, **kwargs):
         self.pk = 1

@@ -89,15 +89,23 @@ def inventory_list(request):
     )
 
 
-def _product_for(vendor, name, flower=None):
+def _product_for(vendor, name, flower=None, kind=None):
     """Get-or-create the vendor's Product for this name, keeping its optional
-    flower mapping current."""
+    flower mapping and its flower/hard-good kind current."""
     product, _ = Product.objects.get_or_create(
-        vendor=vendor, name=name, defaults={"flower": flower}
+        vendor=vendor,
+        name=name,
+        defaults={"flower": flower, "kind": kind or Product.KIND_FLOWER},
     )
+    changed = []
     if flower is not None and product.flower_id != flower.id:
         product.flower = flower
-        product.save(update_fields=["flower"])
+        changed.append("flower")
+    if kind and product.kind != kind:
+        product.kind = kind
+        changed.append("kind")
+    if changed:
+        product.save(update_fields=changed)
     return product
 
 
@@ -109,7 +117,8 @@ def inventory_add(request):
         form = ManualStockForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
-            product = _product_for(data["vendor"], data["name"], data["flower"])
+            kind = data["kind"]
+            product = _product_for(data["vendor"], data["name"], data["flower"], kind)
             invoice = Invoice.objects.create(
                 vendor=data["vendor"],
                 date=data["date_received"],
@@ -119,6 +128,7 @@ def inventory_add(request):
             InvoiceLineItem.objects.create(
                 invoice=invoice,
                 product=product,
+                kind=kind,
                 name=data["name"],
                 quantity=quantity,
                 total_cost=data["per_stem_cost"] * quantity,
@@ -585,7 +595,7 @@ def _run_extraction(invoice):
 InvoiceLineItemFormSet = modelformset_factory(
     InvoiceLineItem,
     form=InvoiceLineItemForm,
-    fields=["name", "quantity", "total_cost", "flower", "size", "grade"],
+    fields=["name", "kind", "quantity", "total_cost", "flower", "size", "grade"],
     extra=1,
     can_delete=True,
 )
@@ -655,7 +665,7 @@ def invoice_review(request, pk):
             added = 0
             for line_item in invoice.line_items.select_related("flower"):
                 line_item.product = _product_for(
-                    invoice.vendor, line_item.name, line_item.flower
+                    invoice.vendor, line_item.name, line_item.flower, line_item.kind
                 )
                 line_item.save(update_fields=["product"])
                 added += 1

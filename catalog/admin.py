@@ -75,14 +75,14 @@ class InvoiceAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ["name", "vendor", "flower", "quantity_in", "quantity_used", "quantity_on_hand", "current_avg_cost"]
-    list_filter = ["vendor"]
+    list_display = ["name", "vendor", "kind", "flower", "quantity_in", "quantity_used", "quantity_on_hand", "current_avg_cost"]
+    list_filter = ["kind", "vendor"]
     search_fields = ["name"]
 
 
 @admin.register(GlobalSettings)
 class GlobalSettingsAdmin(admin.ModelAdmin):
-    list_display = ["markup_multiplier"]
+    list_display = ["markup_multiplier", "hard_good_markup_multiplier"]
 
     def has_add_permission(self, request):
         return not GlobalSettings.objects.exists()
