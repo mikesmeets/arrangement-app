@@ -94,7 +94,7 @@
             {% if product.flower.image %}
               <img src="{{ product.flower.image.url }}" alt="" class="flower-thumb">
             {% endif %}
-            <span class="flower-btn-name">{{ product.label }}</span>
+            <span class="flower-btn-name">{{ product.name }}</span>
             {% if product.flower %}<span class="flower-btn-meta">{{ product.flower.variety.name }} {{ product.flower.color }}</span>{% endif %}
           </button>
         {% endfor %}
