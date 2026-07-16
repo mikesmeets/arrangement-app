@@ -75,6 +75,11 @@ class Flower(models.Model):
         return f"{self.variety.name} - {self.color} ({self.get_type_display()})"
 
     @property
+    def picker_label(self):
+        """Category - variety - color, for choosing a flower off an invoice."""
+        return f"{self.category.name} - {self.variety.name} - {self.color}"
+
+    @property
     def current_avg_cost(self):
         result = InvoiceLineItem.objects.filter(
             product__flower=self, invoice__expired=False

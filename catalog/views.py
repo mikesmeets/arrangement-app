@@ -14,6 +14,7 @@ from .forms import (
     FlowerForm,
     InvoiceFileForm,
     InvoiceForm,
+    InvoiceLineItemForm,
     ManualStockForm,
     SubscriptionForm,
     VendorForm,
@@ -573,6 +574,7 @@ def _run_extraction(invoice):
 
 InvoiceLineItemFormSet = modelformset_factory(
     InvoiceLineItem,
+    form=InvoiceLineItemForm,
     fields=["name", "quantity", "total_cost", "flower", "size", "grade"],
     extra=1,
     can_delete=True,

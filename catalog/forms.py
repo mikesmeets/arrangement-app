@@ -6,6 +6,7 @@ from .models import (
     FlowerCategory,
     FlowerVariety,
     Invoice,
+    InvoiceLineItem,
     Subscription,
     Vendor,
 )
@@ -112,6 +113,25 @@ class InvoiceForm(forms.ModelForm):
             vendor, _ = Vendor.objects.get_or_create(name=typed)
             cleaned["vendor"] = vendor
         return cleaned
+
+
+class FlowerPickerField(forms.ModelChoiceField):
+    """Lists flowers as "category - variety - color" rather than the model's
+    shorter default, so they're identifiable when mapping invoice lines."""
+
+    def label_from_instance(self, obj):
+        return obj.picker_label
+
+
+class InvoiceLineItemForm(forms.ModelForm):
+    flower = FlowerPickerField(
+        queryset=Flower.objects.select_related("category", "variety"),
+        required=False,
+    )
+
+    class Meta:
+        model = InvoiceLineItem
+        fields = ["name", "quantity", "total_cost", "flower", "size", "grade"]
 
 
 class InvoiceFileForm(forms.ModelForm):
