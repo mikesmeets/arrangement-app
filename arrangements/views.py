@@ -157,10 +157,15 @@ def arrangement_add_item(request, pk):
             quantity = Decimal(request.POST.get("quantity") or "1")
         except InvalidOperation:
             quantity = Decimal("1")
-        if product_id:
+        # Supplies are overhead, never an arrangement ingredient — they're kept
+        # out of the pickers, and refused here too.
+        product = Product.objects.filter(
+            pk=product_id, kind__in=Product.ARRANGEABLE_KINDS
+        ).first()
+        if product:
             item, created = ArrangementItem.objects.get_or_create(
                 arrangement=arrangement,
-                product_id=product_id,
+                product=product,
                 defaults={"quantity": quantity},
             )
             if not created:

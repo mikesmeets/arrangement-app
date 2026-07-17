@@ -158,10 +158,15 @@ class Product(models.Model):
 
     KIND_FLOWER = "flower"
     KIND_HARD_GOOD = "hard_good"
+    KIND_SUPPLY = "supply"
     KIND_CHOICES = [
         (KIND_FLOWER, "Flower"),
         (KIND_HARD_GOOD, "Hard good"),
+        (KIND_SUPPLY, "Supplies"),
     ]
+    # Kinds you can actually put in an arrangement. Supplies (tape, foam) are a
+    # cost of doing business, not an ingredient of any one arrangement.
+    ARRANGEABLE_KINDS = [KIND_FLOWER, KIND_HARD_GOOD]
 
     vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="products")
     name = models.CharField(max_length=150)
@@ -169,7 +174,10 @@ class Product(models.Model):
         max_length=20,
         choices=KIND_CHOICES,
         default=KIND_FLOWER,
-        help_text="Hard goods (vases, ribbon) price at the lower hard-good markup.",
+        help_text=(
+            "Hard goods (vases, ribbon) price at the lower hard-good markup. "
+            "Supplies (tape, foam) are overhead — they never join an arrangement."
+        ),
     )
     flower = models.ForeignKey(
         Flower,
