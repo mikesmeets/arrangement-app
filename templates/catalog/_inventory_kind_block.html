@@ -1,7 +1,7 @@
 {% comment %}
 One kind (flowers or hard goods) within a delivery, with its own expire button —
 a delivery's flowers perish while its vases don't.
-Expects: block {items, active}, invoice, kind, title.
+Expects: block {items: [{item, used, on_hand}], active}, invoice, kind, title.
 {% endcomment %}
 <div class="kind-block{% if not block.active %} kind-block-expired{% endif %}">
   <div class="delivery-head">
@@ -12,7 +12,7 @@ Expects: block {items, active}, invoice, kind, title.
               hx-vals='{"invoice": "{{ invoice.id }}", "kind": "{{ kind }}"}'
               hx-target="#inventory-list" hx-swap="outerHTML">Expire {{ title|lower }}</button>
     {% else %}
-      <span class="muted">Expired{% with on=block.items.0.expired_on %}{% if on %} {{ on }}{% endif %}{% endwith %}</span>
+      <span class="muted">Expired{% with on=block.items.0.item.expired_on %}{% if on %} {{ on }}{% endif %}{% endwith %}</span>
       <button type="button" class="btn btn-secondary"
               hx-post="{% url 'inventory-expire' %}"
               hx-vals='{"invoice": "{{ invoice.id }}", "kind": "{{ kind }}", "restore": "1"}'
@@ -23,16 +23,20 @@ Expects: block {items, active}, invoice, kind, title.
     <thead>
       <tr>
         <th>Product</th>
-        <th>Qty</th>
+        <th>In</th>
+        <th>Used</th>
+        <th>On hand</th>
         <th>Per-stem cost</th>
       </tr>
     </thead>
     <tbody>
-      {% for item in block.items %}
-      <tr class="{% if item.expired %}inv-expired{% endif %}">
-        <td>{{ item.product.label }}</td>
-        <td>{{ item.quantity }}</td>
-        <td>${{ item.per_stem_cost|floatformat:2 }}</td>
+      {% for entry in block.items %}
+      <tr class="{% if entry.item.expired %}inv-expired{% endif %}">
+        <td>{{ entry.item.product.label }}</td>
+        <td>{{ entry.item.quantity }}</td>
+        <td>{{ entry.used|floatformat:"-1" }}</td>
+        <td>{{ entry.on_hand|floatformat:"-1" }}</td>
+        <td>${{ entry.item.per_stem_cost|floatformat:2 }}</td>
       </tr>
       {% endfor %}
     </tbody>

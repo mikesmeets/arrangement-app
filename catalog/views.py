@@ -33,74 +33,58 @@ from .models import (
 from .thumbnails import render_thumbnail
 
 
-def _inventory_vendor_rows():
-    """The inventory report — nothing stored, all derived. Grouped by vendor,
-    then by delivery, with flowers and hard goods kept apart so a delivery's
-    roses can expire without taking its vases with them. Supplies are pure
-    overhead and stay out of this view."""
-    summaries = {}
-    products = (
-        Product.objects.select_related("vendor")
-        .filter(kind__in=Product.ARRANGEABLE_KINDS)
-        .prefetch_related("line_items", "arrangement_items")
-    )
-    for product in products:
-        came_in, used = product.quantity_in, product.quantity_used
-        # Keep products whose stock is entirely expired — otherwise the delivery
-        # (and its Restore button) would vanish and the expiry couldn't be undone.
-        if not product.line_items.all() and not used:
-            continue
-        summary = summaries.setdefault(
-            product.vendor_id,
-            {
-                "vendor": product.vendor,
-                "on_hand": Decimal("0"),
-                "value_in": Decimal("0.00"),
-                "value_used": Decimal("0.00"),
-                "deliveries": [],
-            },
-        )
-        summary["on_hand"] += came_in - used
-        summary["value_in"] += product.value_in
-        summary["value_used"] += product.value_used
+def _inventory_delivery_rows():
+    """The inventory report — nothing stored, all derived. One group per
+    delivery (invoice), with its flowers and hard goods kept apart so a
+    delivery's roses can expire without taking its vases with them.
 
+    Used / on hand are per *product*: an arrangement consumes a product, not a
+    particular delivery, so they can't be attributed to one invoice. Supplies
+    are pure overhead and stay out of this view."""
     line_items = (
         InvoiceLineItem.objects.select_related("invoice__vendor", "product")
         .filter(
             product__kind__in=Product.ARRANGEABLE_KINDS,
             invoice__vendor__isnull=False,
         )
-        .order_by("invoice__vendor__name", "-invoice__date", "product__name")
+        .order_by("-invoice__date", "-invoice__id", "product__name")
     )
+    rows = []
+    by_invoice = {}
+    product_stats = {}
     for item in line_items:
-        summary = summaries.get(item.invoice.vendor_id)
-        if summary is None:
-            continue
-        delivery = next(
-            (d for d in summary["deliveries"] if d["invoice"].id == item.invoice_id), None
-        )
-        if delivery is None:
-            delivery = {
+        row = by_invoice.get(item.invoice_id)
+        if row is None:
+            row = {
                 "invoice": item.invoice,
                 "flowers": {"items": [], "active": False},
                 "hard_goods": {"items": [], "active": False},
+                "value": Decimal("0.00"),
+                "stems": Decimal("0"),
             }
-            summary["deliveries"].append(delivery)
+            by_invoice[item.invoice_id] = row
+            rows.append(row)
+
+        product = item.product
+        if product.id not in product_stats:
+            product_stats[product.id] = {
+                "used": product.quantity_used,
+                "on_hand": product.quantity_on_hand,
+            }
+        stats = product_stats[product.id]
         bucket = (
-            delivery["flowers"]
-            if item.product.kind == Product.KIND_FLOWER
-            else delivery["hard_goods"]
+            row["flowers"]
+            if product.kind == Product.KIND_FLOWER
+            else row["hard_goods"]
         )
-        bucket["items"].append(item)
+        bucket["items"].append(
+            {"item": item, "used": stats["used"], "on_hand": stats["on_hand"]}
+        )
         if not item.expired:
             bucket["active"] = True
-
-    vendor_rows = sorted(summaries.values(), key=lambda r: r["vendor"].name)
-    for row in vendor_rows:
-        row["usage_pct"] = (
-            row["value_used"] / row["value_in"] * 100 if row["value_in"] else None
-        )
-    return vendor_rows
+            row["value"] += item.total_cost
+            row["stems"] += item.quantity
+    return rows
 
 
 @login_required
@@ -108,7 +92,7 @@ def inventory_list(request):
     return render(
         request,
         "catalog/inventory_list.html",
-        {"vendor_rows": _inventory_vendor_rows()},
+        {"delivery_rows": _inventory_delivery_rows()},
     )
 
 
@@ -130,7 +114,7 @@ def inventory_expire(request):
     return render(
         request,
         "catalog/_inventory_vendors.html",
-        {"vendor_rows": _inventory_vendor_rows()},
+        {"delivery_rows": _inventory_delivery_rows()},
     )
 
 
