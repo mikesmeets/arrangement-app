@@ -16,6 +16,14 @@ from PIL import Image, ImageOps
 # Shopify standard taxonomy GID for Fresh Flowers.
 FRESH_FLOWERS_CATEGORY_GID = "gid://shopify/TaxonomyCategory/ae-3-1-3"
 
+# The arrangement's status -> Shopify product fields. Unlisted is an active
+# product that isn't published to the online store.
+_STATUS_TO_SHOPIFY = {
+    "active": {"status": "active", "published": True},
+    "unlisted": {"status": "active", "published": False},
+    "draft": {"status": "draft"},
+}
+
 _CATEGORY_MUTATION = """
 mutation productUpdate($input: ProductInput!) {
   productUpdate(input: $input) {
@@ -112,19 +120,19 @@ def push_arrangement(arrangement):
     store, base, headers = _config()
     is_update = bool(arrangement.shopify_product_id)
 
-    payload = {
-        "product": {
-            "title": arrangement.name or "Untitled",
-            "body_html": arrangement.description or "",
-            "product_type": arrangement.get_type_display(),
-            "variants": [
-                {
-                    "sku": arrangement.sku or "",
-                    "price": f"{arrangement.actual_price:.2f}",
-                }
-            ],
-        }
+    product_fields = {
+        "title": arrangement.name or "Untitled",
+        "body_html": arrangement.description or "",
+        "product_type": arrangement.get_type_display(),
+        "variants": [
+            {
+                "sku": arrangement.sku or "",
+                "price": f"{arrangement.actual_price:.2f}",
+            }
+        ],
     }
+    product_fields.update(_STATUS_TO_SHOPIFY.get(arrangement.status, {"status": "draft"}))
+    payload = {"product": product_fields}
 
     warnings = []
     with httpx.Client(timeout=30) as client:

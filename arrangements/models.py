@@ -7,11 +7,15 @@ from catalog.models import Flower, GlobalSettings, Product, Subscription  # noqa
 
 
 class Arrangement(models.Model):
+    # Mirrors how the product shows in Shopify: Active = live in the store,
+    # Draft = not for sale, Unlisted = active but not published to the store.
+    STATUS_ACTIVE = "active"
     STATUS_DRAFT = "draft"
-    STATUS_PUBLISHED = "published"
+    STATUS_UNLISTED = "unlisted"
     STATUS_CHOICES = [
+        (STATUS_ACTIVE, "Active"),
         (STATUS_DRAFT, "Draft"),
-        (STATUS_PUBLISHED, "Published"),
+        (STATUS_UNLISTED, "Unlisted"),
     ]
 
     TYPE_ARRANGEMENT = "arrangement"

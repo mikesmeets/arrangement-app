@@ -243,8 +243,7 @@ def arrangement_push_shopify(request, pk):
             messages.error(request, f"Shopify push failed: {exc}")
         else:
             arrangement.shopify_product_id = result["product_id"]
-            arrangement.status = Arrangement.STATUS_PUBLISHED
-            arrangement.save(update_fields=["shopify_product_id", "status"])
+            arrangement.save(update_fields=["shopify_product_id"])
             verb = "created in" if result["created"] else "updated on"
             messages.success(
                 request,
