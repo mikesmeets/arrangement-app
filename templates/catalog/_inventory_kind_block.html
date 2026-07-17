@@ -1,0 +1,40 @@
+{% comment %}
+One kind (flowers or hard goods) within a delivery, with its own expire button —
+a delivery's flowers perish while its vases don't.
+Expects: block {items, active}, invoice, kind, title.
+{% endcomment %}
+<div class="kind-block{% if not block.active %} kind-block-expired{% endif %}">
+  <div class="delivery-head">
+    <span class="kind-label">{{ title }}</span>
+    {% if block.active %}
+      <button type="button" class="btn btn-danger"
+              hx-post="{% url 'inventory-expire' %}"
+              hx-vals='{"invoice": "{{ invoice.id }}", "kind": "{{ kind }}"}'
+              hx-target="#inventory-list" hx-swap="outerHTML">Expire {{ title|lower }}</button>
+    {% else %}
+      <span class="muted">Expired{% with on=block.items.0.expired_on %}{% if on %} {{ on }}{% endif %}{% endwith %}</span>
+      <button type="button" class="btn btn-secondary"
+              hx-post="{% url 'inventory-expire' %}"
+              hx-vals='{"invoice": "{{ invoice.id }}", "kind": "{{ kind }}", "restore": "1"}'
+              hx-target="#inventory-list" hx-swap="outerHTML">Restore</button>
+    {% endif %}
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Qty</th>
+        <th>Per-stem cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in block.items %}
+      <tr class="{% if item.expired %}inv-expired{% endif %}">
+        <td>{{ item.product.label }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>${{ item.per_stem_cost|floatformat:2 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

@@ -67,8 +67,8 @@ class InvoiceLineItemInline(admin.TabularInline):
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ["vendor", "vendor_invoice_number", "date", "status", "expired"]
-    list_filter = ["expired", "status", "vendor"]
+    list_display = ["vendor", "vendor_invoice_number", "date", "status"]
+    list_filter = ["status", "vendor"]
     search_fields = ["vendor_invoice_number"]
     inlines = [InvoiceLineItemInline]
 

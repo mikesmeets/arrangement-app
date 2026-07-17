@@ -34,45 +34,68 @@ from .thumbnails import render_thumbnail
 
 
 def _inventory_vendor_rows():
-    """The inventory report. Nothing is stored: each product's stock is what its
-    invoice line items brought in (ignoring expired invoices) less what
-    arrangements consumed. Grouped by vendor for the collapsible screen."""
+    """The inventory report — nothing stored, all derived. Grouped by vendor,
+    then by delivery, with flowers and hard goods kept apart so a delivery's
+    roses can expire without taking its vases with them. Supplies are pure
+    overhead and stay out of this view."""
+    summaries = {}
     products = (
-        Product.objects.select_related("vendor", "flower__variety")
-        .prefetch_related("line_items__invoice", "arrangement_items")
-        .order_by("vendor__name", "name")
+        Product.objects.select_related("vendor")
+        .filter(kind__in=Product.ARRANGEABLE_KINDS)
+        .prefetch_related("line_items", "arrangement_items")
     )
-    vendor_rows = []
-    current = None
     for product in products:
-        came_in = product.quantity_in
-        used = product.quantity_used
-        if not came_in and not used:
+        came_in, used = product.quantity_in, product.quantity_used
+        # Keep products whose stock is entirely expired — otherwise the delivery
+        # (and its Restore button) would vanish and the expiry couldn't be undone.
+        if not product.line_items.all() and not used:
             continue
-        if current is None or current["vendor"] != product.vendor:
-            current = {
+        summary = summaries.setdefault(
+            product.vendor_id,
+            {
                 "vendor": product.vendor,
-                "products": [],
                 "on_hand": Decimal("0"),
                 "value_in": Decimal("0.00"),
                 "value_used": Decimal("0.00"),
-            }
-            vendor_rows.append(current)
-        value_in = product.value_in
-        value_used = product.value_used
-        current["products"].append(
-            {
-                "product": product,
-                "came_in": came_in,
-                "used": used,
-                "on_hand": came_in - used,
-                "avg_cost": product.current_avg_cost,
-            }
+                "deliveries": [],
+            },
         )
-        current["on_hand"] += came_in - used
-        current["value_in"] += value_in
-        current["value_used"] += value_used
+        summary["on_hand"] += came_in - used
+        summary["value_in"] += product.value_in
+        summary["value_used"] += product.value_used
 
+    line_items = (
+        InvoiceLineItem.objects.select_related("invoice__vendor", "product")
+        .filter(
+            product__kind__in=Product.ARRANGEABLE_KINDS,
+            invoice__vendor__isnull=False,
+        )
+        .order_by("invoice__vendor__name", "-invoice__date", "product__name")
+    )
+    for item in line_items:
+        summary = summaries.get(item.invoice.vendor_id)
+        if summary is None:
+            continue
+        delivery = next(
+            (d for d in summary["deliveries"] if d["invoice"].id == item.invoice_id), None
+        )
+        if delivery is None:
+            delivery = {
+                "invoice": item.invoice,
+                "flowers": {"items": [], "active": False},
+                "hard_goods": {"items": [], "active": False},
+            }
+            summary["deliveries"].append(delivery)
+        bucket = (
+            delivery["flowers"]
+            if item.product.kind == Product.KIND_FLOWER
+            else delivery["hard_goods"]
+        )
+        bucket["items"].append(item)
+        if not item.expired:
+            bucket["active"] = True
+
+    vendor_rows = sorted(summaries.values(), key=lambda r: r["vendor"].name)
     for row in vendor_rows:
         row["usage_pct"] = (
             row["value_used"] / row["value_in"] * 100 if row["value_in"] else None
@@ -85,6 +108,28 @@ def inventory_list(request):
     return render(
         request,
         "catalog/inventory_list.html",
+        {"vendor_rows": _inventory_vendor_rows()},
+    )
+
+
+@login_required
+def inventory_expire(request):
+    """Expire (or restore) one delivery's flowers, or its hard goods. The two
+    move independently — flowers perish, the vases beside them don't."""
+    if request.method == "POST":
+        invoice_id = request.POST.get("invoice")
+        kind = request.POST.get("kind")
+        if invoice_id and kind in Product.ARRANGEABLE_KINDS:
+            items = InvoiceLineItem.objects.filter(
+                invoice_id=invoice_id, product__kind=kind
+            )
+            if request.POST.get("restore") == "1":
+                items.update(expired=False, expired_on=None)
+            else:
+                items.update(expired=True, expired_on=timezone.localdate())
+    return render(
+        request,
+        "catalog/_inventory_vendors.html",
         {"vendor_rows": _inventory_vendor_rows()},
     )
 
@@ -494,23 +539,6 @@ def invoice_delete(request, pk):
         messages.success(request, "Invoice deleted.")
         return redirect("invoice-list")
     return redirect("invoice-review", pk=pk)
-
-
-@login_required
-def invoice_expire(request, pk):
-    """Mark a delivery perished (or restore it). An expired invoice's line items
-    stop counting toward stock and arrangement pricing."""
-    invoice = get_object_or_404(Invoice, pk=pk)
-    if request.method == "POST":
-        if request.POST.get("restore") == "1":
-            invoice.expired = False
-            invoice.expired_on = None
-        else:
-            invoice.expired = True
-            invoice.expired_on = timezone.localdate()
-        invoice.save(update_fields=["expired", "expired_on"])
-    invoices = Invoice.objects.select_related("vendor").prefetch_related("line_items")
-    return render(request, "catalog/_invoice_rows.html", {"invoices": invoices})
 
 
 def _suggest_flower(name):

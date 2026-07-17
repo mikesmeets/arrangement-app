@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path("inventory/", views.inventory_list, name="inventory-list"),
     path("inventory/add/", views.inventory_add, name="inventory-add"),
+    path("inventory/expire/", views.inventory_expire, name="inventory-expire"),
     path("vendors/", views.vendor_list, name="vendor-list"),
     path("vendors/add/", views.vendor_add, name="vendor-add"),
     path("vendors/options/", views.vendor_options, name="vendor-options"),
@@ -24,6 +25,5 @@ urlpatterns = [
     path("invoices/", views.invoice_list, name="invoice-list"),
     path("invoices/add/", views.invoice_create, name="invoice-create"),
     path("invoices/<int:pk>/review/", views.invoice_review, name="invoice-review"),
-    path("invoices/<int:pk>/expire/", views.invoice_expire, name="invoice-expire"),
     path("invoices/<int:pk>/delete/", views.invoice_delete, name="invoice-delete"),
 ]

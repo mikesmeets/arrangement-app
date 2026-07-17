@@ -66,7 +66,7 @@ def _hard_good_products():
     directly rather than browsing it by delivery."""
     return (
         Product.objects.select_related("vendor")
-        .filter(kind=Product.KIND_HARD_GOOD, line_items__invoice__expired=False)
+        .filter(kind=Product.KIND_HARD_GOOD, line_items__expired=False)
         .distinct()
         .order_by("vendor__name", "name")
     )
@@ -98,7 +98,7 @@ def _recent_invoice_products():
         Invoice.objects.select_related("vendor")
         .prefetch_related("line_items__product__vendor", "line_items__product__flower__variety")
         .filter(
-            expired=False,
+            line_items__expired=False,
             line_items__product__isnull=False,
             line_items__product__kind=Product.KIND_FLOWER,
         )
@@ -112,7 +112,7 @@ def _recent_invoice_products():
         seen = set()
         for line_item in invoice.line_items.all():
             product = line_item.product
-            if not product or product.kind != Product.KIND_FLOWER:
+            if not product or product.kind != Product.KIND_FLOWER or line_item.expired:
                 continue
             if product.id not in seen:
                 seen.add(product.id)
@@ -125,7 +125,7 @@ def _recent_invoice_products():
 
     leftover = (
         Product.objects.select_related("vendor", "flower__variety")
-        .filter(line_items__invoice__expired=False, kind=Product.KIND_FLOWER)
+        .filter(line_items__expired=False, kind=Product.KIND_FLOWER)
         .exclude(id__in=surfaced)
         .distinct()
         .order_by("vendor__name", "name")

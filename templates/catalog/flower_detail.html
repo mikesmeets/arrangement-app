@@ -35,7 +35,7 @@
     </thead>
     <tbody>
       {% for row in rows %}
-      <tr class="{% if row.item.invoice.expired %}inv-expired{% endif %}">
+      <tr class="{% if row.item.expired %}inv-expired{% endif %}">
         <td>{{ row.item.invoice.date }}</td>
         <td>{{ row.item.invoice.vendor|default:"—" }}</td>
         <td>{{ row.item.quantity }}</td>

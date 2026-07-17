@@ -82,7 +82,7 @@ class Flower(models.Model):
     @property
     def current_avg_cost(self):
         result = InvoiceLineItem.objects.filter(
-            product__flower=self, invoice__expired=False
+            product__flower=self, expired=False
         ).aggregate(avg=models.Avg("per_stem_cost"))
         avg = result["avg"]
         return avg.quantize(Decimal("0.01")) if avg is not None else Decimal("0.00")
@@ -204,8 +204,8 @@ class Product(models.Model):
 
     @property
     def quantity_in(self):
-        """Stems received, from the line items of unexpired invoices."""
-        result = self.line_items.filter(invoice__expired=False).aggregate(
+        """Stems received, from line items that haven't been expired."""
+        result = self.line_items.filter(expired=False).aggregate(
             total=models.Sum("quantity")
         )
         return Decimal(result["total"] or 0)
@@ -223,7 +223,7 @@ class Product(models.Model):
 
     @property
     def current_avg_cost(self):
-        result = self.line_items.filter(invoice__expired=False).aggregate(
+        result = self.line_items.filter(expired=False).aggregate(
             avg=models.Avg("per_stem_cost")
         )
         avg = result["avg"]
@@ -231,8 +231,8 @@ class Product(models.Model):
 
     @property
     def value_in(self):
-        """What this product cost across unexpired invoices."""
-        result = self.line_items.filter(invoice__expired=False).aggregate(
+        """What this product cost, across line items still in stock."""
+        result = self.line_items.filter(expired=False).aggregate(
             total=models.Sum("total_cost")
         )
         return result["total"] or Decimal("0.00")
@@ -268,10 +268,6 @@ class Invoice(models.Model):
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING
     )
-    expired = models.BooleanField(
-        default=False, help_text="Perished delivery — its flowers stop counting as stock."
-    )
-    expired_on = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -320,6 +316,10 @@ class InvoiceLineItem(models.Model):
     )
     size = models.CharField(max_length=50, blank=True)
     grade = models.CharField(max_length=50, blank=True)
+    # Expiry lives here, not on the invoice: a delivery's flowers perish while
+    # the vases that came with them do not.
+    expired = models.BooleanField(default=False)
+    expired_on = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ["id"]

@@ -9,6 +9,6 @@
   </form>
 </div>
 
-<p class="muted">An invoice's line items are your stock. Mark a delivery expired when it perishes — its flowers drop out of inventory and arrangement pricing.</p>
+<p class="muted">An invoice's line items are your stock. Expire perished stock on the <a href="{% url 'inventory-list' %}">Inventory</a> tab, where a delivery's flowers and hard goods expire separately.</p>
 {% include "catalog/_invoice_rows.html" %}
 {% endblock %}

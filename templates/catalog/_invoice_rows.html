@@ -7,37 +7,23 @@
         <th>Date</th>
         <th>Total cost</th>
         <th>Status</th>
-        <th>Stock</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       {% for invoice in invoices %}
-      <tr class="{% if invoice.expired %}inv-expired{% endif %}">
+      <tr>
         <td>{{ invoice.vendor|default:"—" }}</td>
         <td>{{ invoice.vendor_invoice_number|default:"—" }}</td>
         <td>{{ invoice.date }}</td>
         <td>${{ invoice.total_cost|floatformat:2 }}</td>
         <td>{{ invoice.get_status_display }}</td>
-        <td class="inv-action">
-          {% if invoice.expired %}
-            <span class="muted">Expired {{ invoice.expired_on }}</span>
-            <button type="button" class="btn btn-secondary"
-                    hx-post="{% url 'invoice-expire' invoice.pk %}"
-                    hx-vals='{"restore": "1"}'
-                    hx-target="#invoice-list" hx-swap="outerHTML">Restore</button>
-          {% else %}
-            <button type="button" class="btn btn-danger"
-                    hx-post="{% url 'invoice-expire' invoice.pk %}"
-                    hx-target="#invoice-list" hx-swap="outerHTML">Mark expired</button>
-          {% endif %}
-        </td>
         <td><a class="btn" href="{% url 'invoice-review' invoice.pk %}">
           {% if invoice.status == invoice.STATUS_CONFIRMED %}View{% else %}Review{% endif %}
         </a></td>
       </tr>
       {% empty %}
-      <tr><td colspan="7" class="muted">No invoices yet.</td></tr>
+      <tr><td colspan="6" class="muted">No invoices yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>

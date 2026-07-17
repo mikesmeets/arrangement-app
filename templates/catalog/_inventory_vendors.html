@@ -6,28 +6,21 @@
     <span class="muted">{{ row.on_hand|floatformat:"-1" }} stems on hand &middot; ${{ row.value_used|floatformat:2 }} of ${{ row.value_in|floatformat:2 }} used{% if row.usage_pct is not None %} ({{ row.usage_pct|floatformat:0 }}%){% endif %}</span>
   </summary>
   <div class="collapse-body">
-    <table>
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>In</th>
-          <th>Used</th>
-          <th>On hand</th>
-          <th>Avg per-stem cost</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for entry in row.products %}
-        <tr>
-          <td>{{ entry.product.label }}</td>
-          <td>{{ entry.came_in|floatformat:"-1" }}</td>
-          <td>{{ entry.used|floatformat:"-1" }}</td>
-          <td>{{ entry.on_hand|floatformat:"-1" }}</td>
-          <td>${{ entry.avg_cost|floatformat:2 }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% for d in row.deliveries %}
+    <div class="delivery">
+      <div class="delivery-head">
+        <span class="delivery-label">
+          {% if d.invoice.vendor_invoice_number %}Invoice #{{ d.invoice.vendor_invoice_number }} &middot; {% endif %}{{ d.invoice.date }}
+        </span>
+      </div>
+      {% if d.flowers.items %}
+        {% include "catalog/_inventory_kind_block.html" with block=d.flowers invoice=d.invoice kind="flower" title="Flowers" %}
+      {% endif %}
+      {% if d.hard_goods.items %}
+        {% include "catalog/_inventory_kind_block.html" with block=d.hard_goods invoice=d.invoice kind="hard_good" title="Hard goods" %}
+      {% endif %}
+    </div>
+    {% endfor %}
   </div>
 </details>
 {% empty %}
