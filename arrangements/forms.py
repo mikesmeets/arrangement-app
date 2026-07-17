@@ -20,7 +20,7 @@ class ArrangementForm(forms.ModelForm):
         widgets = {
             "mode": forms.HiddenInput(),
             "description": forms.Textarea(attrs={"rows": 4}),
-            "photo": forms.ClearableFileInput(attrs={"accept": "image/*", "capture": "environment"}),
+            "photo": forms.ClearableFileInput(attrs={"accept": "image/*"}),
             "tags": forms.TextInput(attrs={"placeholder": "e.g. valentines, red, roses"}),
         }
         labels = {

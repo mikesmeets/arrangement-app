@@ -141,7 +141,7 @@ class InvoiceFileForm(forms.ModelForm):
         model = Invoice
         fields = ["file"]
         widgets = {
-            "file": forms.ClearableFileInput(attrs={"accept": "image/*,.pdf", "capture": "environment"}),
+            "file": forms.ClearableFileInput(attrs={"accept": "image/*,.pdf"}),
         }
 
 
@@ -174,7 +174,7 @@ class FlowerForm(forms.ModelForm):
             "image",
         ]
         widgets = {
-            "image": forms.ClearableFileInput(attrs={"accept": "image/*", "capture": "environment"}),
+            "image": forms.ClearableFileInput(attrs={"accept": "image/*"}),
         }
 
     def clean(self):
