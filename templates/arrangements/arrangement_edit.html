@@ -135,6 +135,19 @@
 </div>
 
 <div class="card">
+  <h2>Shopify</h2>
+  {% if arrangement.shopify_product_id %}
+    <p class="muted">Published — Shopify product #{{ arrangement.shopify_product_id }}.</p>
+  {% endif %}
+  <p class="muted">Pushes this arrangement as a product: name, price (${{ arrangement.actual_price|floatformat:2 }}), SKU, description, type ({{ arrangement.get_type_display }}), the Fresh Flowers category, its photo{% if arrangement.shopify_collection %}, and the "{{ arrangement.shopify_collection }}" collection{% endif %}. Set the collection and photo in Details above first.</p>
+  <form method="post" action="{% url 'arrangement-push-shopify' arrangement.pk %}"
+        onsubmit="return confirm('Push &quot;{{ arrangement.name|escapejs }}&quot; to your Shopify store?');">
+    {% csrf_token %}
+    <button type="submit" class="btn">{% if arrangement.shopify_product_id %}Update in Shopify{% else %}Push to Shopify{% endif %}</button>
+  </form>
+</div>
+
+<div class="card">
   <a class="btn btn-secondary" href="{% url 'arrangement-list' %}">Back to list</a>
   <form method="post" action="{% url 'arrangement-delete' arrangement.pk %}" style="display:inline"
         onsubmit="return confirm('Delete this arrangement?');">

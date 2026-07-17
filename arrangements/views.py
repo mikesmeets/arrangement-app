@@ -9,6 +9,7 @@ from catalog.models import Invoice, Product, Subscription
 
 from .forms import ArrangementForm
 from .models import Arrangement, ArrangementItem
+from .shopify import ShopifyError, ShopifyNotConfigured, push_arrangement
 
 RECENT_INVOICE_LIMIT = 10
 
@@ -228,6 +229,28 @@ def arrangement_remove_item(request, pk, item_id):
     arrangement = get_object_or_404(Arrangement, pk=pk)
     ArrangementItem.objects.filter(pk=item_id, arrangement=arrangement).delete()
     return _items_response(request, arrangement)
+
+
+@login_required
+def arrangement_push_shopify(request, pk):
+    arrangement = get_object_or_404(Arrangement, pk=pk)
+    if request.method == "POST":
+        try:
+            result = push_arrangement(arrangement)
+        except ShopifyNotConfigured as exc:
+            messages.error(request, str(exc))
+        except ShopifyError as exc:
+            messages.error(request, f"Shopify push failed: {exc}")
+        else:
+            arrangement.shopify_product_id = result["product_id"]
+            arrangement.status = Arrangement.STATUS_PUBLISHED
+            arrangement.save(update_fields=["shopify_product_id", "status"])
+            verb = "created in" if result["created"] else "updated on"
+            messages.success(
+                request,
+                f'"{arrangement.name}" {verb} Shopify. View it at {result["admin_url"]}',
+            )
+    return redirect("arrangement-edit", pk=pk)
 
 
 @login_required

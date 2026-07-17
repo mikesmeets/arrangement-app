@@ -29,6 +29,12 @@ if RAILWAY_PUBLIC_DOMAIN:
 
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
 
+# Shopify push (Phase 3). Store is the *.myshopify.com subdomain, token is an
+# Admin API access token. Leave blank to disable the Push to Shopify button.
+SHOPIFY_STORE = env("SHOPIFY_STORE", default="")
+SHOPIFY_ACCESS_TOKEN = env("SHOPIFY_ACCESS_TOKEN", default="")
+SHOPIFY_API_VERSION = env("SHOPIFY_API_VERSION", default="2026-04")
+
 
 # Application definition
 
