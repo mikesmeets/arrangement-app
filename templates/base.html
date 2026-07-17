@@ -229,6 +229,9 @@
     .collapse-group[open] > summary::before { content: "\25BE"; }
     .collapse-group[open] > summary { border-bottom: 1px solid var(--border); }
     .collapse-group .flower-grid { padding: 0.75rem; margin-bottom: 0; }
+    /* A grid child sets display:grid, which can override the browser's collapse;
+       force it hidden when the group is closed. */
+    .collapse-group:not([open]) > .flower-grid { display: none; }
     .collapse-body { padding: 0 0.75rem 0.5rem; overflow-x: auto; }
     tr.inv-expired td { opacity: 0.5; text-decoration: line-through; }
     .delivery { margin-top: 0.75rem; }

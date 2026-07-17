@@ -107,21 +107,25 @@
 
 {% if hard_goods %}
 <div class="card">
-  <h2>Hard goods</h2>
-  <p class="muted">Vases, ribbon &amp; co — marked up {{ arrangement.hard_good_markup }}x, lower than flowers.</p>
-  <div class="flower-grid">
-    {% for product in hard_goods %}
-      <button type="button"
-              class="flower-btn"
-              hx-post="{% url 'arrangement-add-item' arrangement.pk %}"
-              hx-vals='{"product": "{{ product.id }}", "quantity": 1}'
-              hx-target="#items-and-price"
-              hx-swap="outerHTML">
-        <span class="flower-btn-name">{{ product.name }}</span>
-        <span class="flower-btn-meta">{{ product.vendor.abbreviation|default:product.vendor.name }}</span>
-      </button>
-    {% endfor %}
-  </div>
+  <details class="collapse-group">
+    <summary>
+      <strong>Hard goods</strong>
+      <span class="muted">vases, ribbon &amp; co &middot; {{ hard_goods|length }} product{{ hard_goods|length|pluralize }} &middot; marked up {{ arrangement.hard_good_markup }}x</span>
+    </summary>
+    <div class="flower-grid">
+      {% for product in hard_goods %}
+        <button type="button"
+                class="flower-btn"
+                hx-post="{% url 'arrangement-add-item' arrangement.pk %}"
+                hx-vals='{"product": "{{ product.id }}", "quantity": 1}'
+                hx-target="#items-and-price"
+                hx-swap="outerHTML">
+          <span class="flower-btn-name">{{ product.name }}</span>
+          <span class="flower-btn-meta">{{ product.vendor.abbreviation|default:product.vendor.name }}</span>
+        </button>
+      {% endfor %}
+    </div>
+  </details>
 </div>
 {% endif %}
 
