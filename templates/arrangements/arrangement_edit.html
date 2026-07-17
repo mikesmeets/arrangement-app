@@ -28,7 +28,10 @@
       {% endif %}
     {% endfor %}
     {% if arrangement.photo %}
-      <p class="muted">Current photo: {{ arrangement.photo.name }}</p>
+      <a href="{{ arrangement.photo.url }}" target="_blank" rel="noopener">
+        <img src="{{ arrangement.photo.url }}" alt="{{ arrangement.name }}" class="invoice-preview">
+      </a>
+      <p class="muted">Current photo: {{ arrangement.photo.name }}. Choose a new one above to replace it.</p>
     {% endif %}
     <button type="submit" class="btn" style="margin-top:1rem;">Save Details</button>
   </form>
