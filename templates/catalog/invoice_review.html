@@ -75,6 +75,15 @@
     <h2>Line Items</h2>
     <button type="button" class="btn" hx-get="{% url 'flower-add' %}" hx-target="#modal-root" hx-swap="innerHTML">+ Add Flower</button>
   </div>
+  {% if kind_subtotals %}
+  <div class="kind-subtotals">
+    {% for s in kind_subtotals %}
+      <span><strong>{{ s.label }}</strong> ${{ s.total|floatformat:2 }} <span class="muted">&middot; {{ s.qty }} unit{{ s.qty|pluralize }}</span></span>
+    {% endfor %}
+    <span class="kind-subtotals-total"><strong>Total</strong> ${{ invoice.total_cost|floatformat:2 }}</span>
+  </div>
+  <p class="muted">Subtotals reflect saved line items — hit Create/Update after editing to refresh them.</p>
+  {% endif %}
   <form method="post">
     {% csrf_token %}
     {{ formset.management_form }}

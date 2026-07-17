@@ -697,5 +697,28 @@ def invoice_review(request, pk):
     return render(
         request,
         "catalog/invoice_review.html",
-        {"invoice": invoice, "form": details_form, "file_form": file_form, "formset": formset},
+        {
+            "invoice": invoice,
+            "form": details_form,
+            "file_form": file_form,
+            "formset": formset,
+            "kind_subtotals": _invoice_kind_subtotals(invoice),
+        },
     )
+
+
+def _invoice_kind_subtotals(invoice):
+    """Per-kind dollar subtotals (flowers / hard goods / supplies) for the saved
+    line items, in that order, skipping kinds with nothing on the invoice."""
+    labels = dict(Product.KIND_CHOICES)
+    buckets = {}
+    for line_item in invoice.line_items.all():
+        bucket = buckets.setdefault(
+            line_item.kind,
+            {"label": labels.get(line_item.kind, line_item.kind),
+             "total": Decimal("0.00"), "qty": 0},
+        )
+        bucket["total"] += line_item.total_cost
+        bucket["qty"] += line_item.quantity
+    order = [Product.KIND_FLOWER, Product.KIND_HARD_GOOD, Product.KIND_SUPPLY]
+    return [buckets[kind] for kind in order if kind in buckets]
