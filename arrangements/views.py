@@ -250,6 +250,8 @@ def arrangement_push_shopify(request, pk):
                 request,
                 f'"{arrangement.name}" {verb} Shopify. View it at {result["admin_url"]}',
             )
+            for warning in result.get("warnings", []):
+                messages.warning(request, warning)
     return redirect("arrangement-edit", pk=pk)
 
 

@@ -5,10 +5,13 @@ the environment (never hard-coded), and a re-push updates the existing product
 rather than creating a duplicate — the arrangement remembers its Shopify id.
 """
 
+import base64
+import io
 from urllib.parse import quote
 
 import httpx
 from django.conf import settings
+from PIL import Image, ImageOps
 
 # Shopify standard taxonomy GID for Fresh Flowers.
 FRESH_FLOWERS_CATEGORY_GID = "gid://shopify/TaxonomyCategory/ae-3-1-3"
@@ -59,6 +62,23 @@ def _graphql(client, store, headers, query, variables):
     return data["data"]
 
 
+def _photo_as_jpeg_attachment(arrangement):
+    """Re-encode the photo as a plain JPEG and base64-encode it. iPhone HDR
+    shots arrive as MPO (multi-frame JPEG), which Shopify rejects; Pillow reads
+    the primary frame, and sending the bytes ourselves also means Shopify
+    needn't fetch a URL. exif_transpose keeps the orientation upright."""
+    arrangement.photo.open("rb")
+    try:
+        image = Image.open(arrangement.photo)
+        image = ImageOps.exif_transpose(image)
+        image = image.convert("RGB")
+        buffer = io.BytesIO()
+        image.save(buffer, format="JPEG", quality=90)
+    finally:
+        arrangement.photo.close()
+    return base64.standard_b64encode(buffer.getvalue()).decode("ascii")
+
+
 def _ensure_in_collection(client, base, headers, product_id, name):
     found = _rest(
         client, base, headers, "GET",
@@ -106,48 +126,69 @@ def push_arrangement(arrangement):
         }
     }
 
+    warnings = []
     with httpx.Client(timeout=30) as client:
+        # Creating/updating the product is the critical step; if it fails there's
+        # nothing to record. Everything after is best-effort — a failure there is
+        # a warning, not a reason to abandon (and orphan) the product.
         if is_update:
             existing = _rest(
                 client, base, headers, "GET",
                 f"/products/{arrangement.shopify_product_id}.json",
             )
-            payload["product"]["id"] = existing["product"]["id"]
-            variants = existing["product"].get("variants") or []
+            existing_product = existing["product"]
+            payload["product"]["id"] = existing_product["id"]
+            variants = existing_product.get("variants") or []
             if variants:
                 payload["product"]["variants"][0]["id"] = variants[0]["id"]
             result = _rest(
                 client, base, headers, "PUT",
                 f"/products/{arrangement.shopify_product_id}.json", payload,
             )
+            has_image = bool(existing_product.get("images"))
         else:
             result = _rest(client, base, headers, "POST", "/products.json", payload)
+            has_image = False
 
         product_id = result["product"]["id"]
 
         # Standard category — Fresh Flowers.
-        _graphql(
-            client, store, headers, _CATEGORY_MUTATION,
-            {"input": {
-                "id": f"gid://shopify/Product/{product_id}",
-                "category": FRESH_FLOWERS_CATEGORY_GID,
-            }},
-        )
-
-        # Photo — first push only, so re-pushing doesn't stack duplicate images.
-        # Shopify fetches the URL itself, so it must be publicly reachable (a
-        # signed S3 URL works; a localhost dev URL does not).
-        if not is_update and arrangement.photo:
-            _rest(
-                client, base, headers, "POST", f"/products/{product_id}/images.json",
-                {"image": {"src": arrangement.photo.url, "alt": arrangement.name or ""}},
+        try:
+            _graphql(
+                client, store, headers, _CATEGORY_MUTATION,
+                {"input": {
+                    "id": f"gid://shopify/Product/{product_id}",
+                    "category": FRESH_FLOWERS_CATEGORY_GID,
+                }},
             )
+        except ShopifyError as exc:
+            warnings.append(f"Category not set: {exc}")
+
+        # Photo — only when the product has none, so re-pushing never stacks
+        # duplicate images. Re-encoded to JPEG, so iPhone MPO shots are accepted.
+        if arrangement.photo and not has_image:
+            try:
+                _rest(
+                    client, base, headers, "POST",
+                    f"/products/{product_id}/images.json",
+                    {"image": {
+                        "attachment": _photo_as_jpeg_attachment(arrangement),
+                        "filename": "arrangement.jpg",
+                        "alt": arrangement.name or "",
+                    }},
+                )
+            except Exception as exc:
+                warnings.append(f"Photo not uploaded: {exc}")
 
         if arrangement.shopify_collection:
-            _ensure_in_collection(client, base, headers, product_id, arrangement.shopify_collection)
+            try:
+                _ensure_in_collection(client, base, headers, product_id, arrangement.shopify_collection)
+            except ShopifyError as exc:
+                warnings.append(f"Collection not set: {exc}")
 
     return {
         "product_id": str(product_id),
         "admin_url": f"https://{store}.myshopify.com/admin/products/{product_id}",
         "created": not is_update,
+        "warnings": warnings,
     }
