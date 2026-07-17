@@ -86,6 +86,8 @@
           <th>Qty</th>
           <th>Total cost</th>
           <th>Per-stem cost</th>
+          <th>Used</th>
+          <th>On hand</th>
           <th>Flower</th>
           <th>Size</th>
           <th>Grade</th>
@@ -99,7 +101,7 @@
       </tbody>
     </table>
     <script type="text/template" id="empty-line-item-row">{% with line_form=formset.empty_form %}{% include "catalog/_line_item_row.html" %}{% endwith %}</script>
-    <p class="muted">Fill in a row's name, quantity, and total cost — a fresh blank row appears as you go. Use the &times; to drop a row. Per-stem cost is calculated from total cost &divide; qty once you save. Leave "Flower" blank on a row to skip adding it to inventory. Don't see the right flower? Use the "+ Add Flower" button above.</p>
+    <p class="muted">Fill in a row's name, quantity, and total cost — a fresh blank row appears as you go. Use the &times; to drop a row. Per-stem cost is calculated from total cost &divide; qty once you save. Used and On hand are that product's totals across every delivery, since arrangements consume a product rather than one invoice's batch. Don't see the right flower? Use the "+ Add Flower" button above.</p>
     {% if invoice.status == invoice.STATUS_CONFIRMED %}
       <button type="submit" class="btn" name="confirm" value="1" style="margin-top:1rem;">Update</button>
       <a class="btn btn-secondary" href="{% url 'invoice-list' %}">Cancel</a>

@@ -4,6 +4,10 @@
   <td>{{ line_form.quantity }}</td>
   <td>{{ line_form.total_cost }}</td>
   <td>{% if line_form.instance.pk %}${{ line_form.instance.per_stem_cost }}{% else %}<span class="muted">—</span>{% endif %}</td>
+  {% with product=line_form.instance.product %}
+  <td>{% if product %}{{ product.quantity_used|floatformat:"-1" }}{% else %}<span class="muted">—</span>{% endif %}</td>
+  <td>{% if product %}{{ product.quantity_on_hand|floatformat:"-1" }}{% else %}<span class="muted">—</span>{% endif %}</td>
+  {% endwith %}
   <td>
     {{ line_form.flower }}
     {% if line_form.errors %}<ul class="errorlist">{% for field, errs in line_form.errors.items %}{% for e in errs %}<li>{{ e }}</li>{% endfor %}{% endfor %}</ul>{% endif %}

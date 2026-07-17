@@ -288,6 +288,34 @@ class Invoice(models.Model):
     def file_is_pdf(self):
         return bool(self.file) and self.file.name.lower().endswith(".pdf")
 
+    @property
+    def estimated_value_used(self):
+        """Estimate of this delivery's value that arrangements consumed.
+
+        Usage is tracked per product, not per delivery — an arrangement takes
+        "a Freedom Rose", not "Tuesday's Freedom Rose" — so this apportions each
+        product's used share evenly across the invoices that supplied it. It's
+        an approximation, not a measured figure.
+        """
+        total = Decimal("0.00")
+        for item in self.line_items.select_related("product").filter(expired=False):
+            product = item.product
+            if not product:
+                continue
+            came_in = product.quantity_in
+            if not came_in:
+                continue
+            used_share = min(product.quantity_used / came_in, Decimal("1"))
+            total += item.total_cost * used_share
+        return total.quantize(Decimal("0.01"))
+
+    @property
+    def estimated_usage_pct(self):
+        total = self.total_cost
+        if not total:
+            return None
+        return self.estimated_value_used / total * 100
+
 
 class InvoiceLineItem(models.Model):
     invoice = models.ForeignKey(

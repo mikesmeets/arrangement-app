@@ -6,6 +6,7 @@
         <th>Invoice #</th>
         <th>Date</th>
         <th>Total cost</th>
+        <th title="Estimated: usage is tracked per product, so each product's used share is apportioned across the invoices that supplied it.">Used (est.)</th>
         <th>Status</th>
         <th></th>
       </tr>
@@ -17,13 +18,18 @@
         <td>{{ invoice.vendor_invoice_number|default:"—" }}</td>
         <td>{{ invoice.date }}</td>
         <td>${{ invoice.total_cost|floatformat:2 }}</td>
+        <td>
+          {% if invoice.estimated_usage_pct is not None %}
+            ${{ invoice.estimated_value_used|floatformat:2 }} <span class="muted">({{ invoice.estimated_usage_pct|floatformat:0 }}%)</span>
+          {% else %}<span class="muted">—</span>{% endif %}
+        </td>
         <td>{{ invoice.get_status_display }}</td>
         <td><a class="btn" href="{% url 'invoice-review' invoice.pk %}">
           {% if invoice.status == invoice.STATUS_CONFIRMED %}View{% else %}Review{% endif %}
         </a></td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" class="muted">No invoices yet.</td></tr>
+      <tr><td colspan="7" class="muted">No invoices yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>
