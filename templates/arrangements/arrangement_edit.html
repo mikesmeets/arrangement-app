@@ -97,8 +97,12 @@
             {% if product.flower.image %}
               <img src="{{ product.flower.image.url }}" alt="" class="flower-thumb">
             {% endif %}
-            <span class="flower-btn-name">{{ product.name }}</span>
-            {% if product.flower %}<span class="flower-btn-meta">{{ product.flower.variety.name }} {{ product.flower.color }}</span>{% endif %}
+            {% if product.flower %}
+              <span class="flower-btn-name">{{ product.flower.variety.name }}</span>
+              <span class="flower-btn-meta">{{ product.flower.color }}</span>
+            {% else %}
+              <span class="flower-btn-name">{{ product.name|title }}</span>
+            {% endif %}
           </button>
         {% endfor %}
       </div>
@@ -123,7 +127,7 @@
                 hx-vals='{"product": "{{ product.id }}", "quantity": 1}'
                 hx-target="#items-and-price"
                 hx-swap="outerHTML">
-          <span class="flower-btn-name">{{ product.name }}</span>
+          <span class="flower-btn-name">{{ product.name|title }}</span>
           <span class="flower-btn-meta">{{ product.vendor.abbreviation|default:product.vendor.name }}</span>
         </button>
       {% endfor %}
