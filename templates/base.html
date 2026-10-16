@@ -153,19 +153,25 @@
     th a:hover { color: var(--pink-dark); }
     .qty-controls { display: flex; align-items: center; gap: 0.4rem; }
     .qty-btn {
-      width: 28px;
-      height: 28px;
+      width: 36px;
+      height: 36px;
       padding: 0;
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 8px;
       background: white;
       color: var(--pink-dark);
-      font-size: 0.7rem;
+      font-size: 1rem;
+      font-weight: 700;
       line-height: 1;
       cursor: pointer;
+      flex-shrink: 0;
     }
-    .qty-btn:active { background: #f4eef1; }
-    .qty-input { width: 60px; padding: 0.3rem; text-align: center; margin-top: 0; }
+    .qty-btn:hover { background: #faf4f7; }
+    .qty-btn:active { background: #f4eef1; transform: scale(0.93); }
+    @media (max-width: 767px) {
+      .qty-btn { width: 44px; height: 44px; font-size: 1.2rem; border-radius: 10px; }
+    }
+    .qty-input { width: 54px; padding: 0.3rem; text-align: center; margin-top: 0; }
     /* Mobile nav */
     .nav-hamburger {
       display: none;

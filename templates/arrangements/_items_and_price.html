@@ -28,7 +28,7 @@
                     hx-vals='{"delta": -1}'
                     hx-target="#items-and-price"
                     hx-swap="outerHTML"
-                    aria-label="Decrease quantity">&#9660;</button>
+                    aria-label="Decrease quantity">&#8722;</button>
             <input type="number" step="0.1" min="0" class="qty-input" value="{{ item.quantity }}"
                    hx-post="{% url 'arrangement-set-item-qty' arrangement.pk item.id %}"
                    hx-trigger="change"
@@ -41,7 +41,7 @@
                     hx-vals='{"delta": 1}'
                     hx-target="#items-and-price"
                     hx-swap="outerHTML"
-                    aria-label="Increase quantity">&#9650;</button>
+                    aria-label="Increase quantity">+</button>
           </div>
         </td>
         <td>${{ item.product.current_avg_cost|floatformat:2 }}</td>
