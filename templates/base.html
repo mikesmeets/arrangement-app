@@ -353,6 +353,12 @@
        force it hidden when the group is closed. */
     .collapse-group:not([open]) > .flower-grid { display: none; }
     .collapse-body { padding: 0 0.75rem 0.5rem; overflow-x: auto; }
+    tr.row-link { cursor: pointer; }
+    tr.row-link:hover td { background: #faf4f7; }
+    tr.row-link:active td { background: #f4eef1; }
+    @media (max-width: 767px) {
+      .edit-col { display: none; }
+    }
     tr.inv-expired td { opacity: 0.5; text-decoration: line-through; }
     .delivery { margin-top: 0.75rem; }
     .delivery-head {

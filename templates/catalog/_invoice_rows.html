@@ -13,7 +13,7 @@
     </thead>
     <tbody>
       {% for invoice in invoices %}
-      <tr>
+      <tr class="row-link" onclick="location.href='{% url 'invoice-review' invoice.pk %}'">
         <td>{{ invoice.vendor|default:"—" }}</td>
         <td>{{ invoice.vendor_invoice_number|default:"—" }}</td>
         <td>{{ invoice.date }}</td>
@@ -24,7 +24,7 @@
           {% else %}<span class="muted">—</span>{% endif %}
         </td>
         <td>{{ invoice.get_status_display }}</td>
-        <td><a class="btn" href="{% url 'invoice-review' invoice.pk %}">
+        <td class="edit-col"><a class="btn" href="{% url 'invoice-review' invoice.pk %}" onclick="event.stopPropagation()">
           {% if invoice.status == invoice.STATUS_CONFIRMED %}View{% else %}Review{% endif %}
         </a></td>
       </tr>

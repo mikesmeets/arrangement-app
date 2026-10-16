@@ -21,12 +21,12 @@
     </thead>
     <tbody>
       {% for arrangement in arrangements %}
-      <tr>
+      <tr class="row-link" onclick="location.href='{% url 'arrangement-edit' arrangement.pk %}'">
         <td>{{ arrangement.sku }}</td>
         <td>{{ arrangement.name }}</td>
         <td>{{ arrangement.get_status_display }}</td>
         <td>${{ arrangement.suggested_price|floatformat:2 }}</td>
-        <td><a class="btn" href="{% url 'arrangement-edit' arrangement.pk %}">Edit</a></td>
+        <td class="edit-col"><a class="btn" href="{% url 'arrangement-edit' arrangement.pk %}" onclick="event.stopPropagation()">Edit</a></td>
       </tr>
       {% empty %}
       <tr><td colspan="5" class="muted">No arrangements yet.</td></tr>
