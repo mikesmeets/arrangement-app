@@ -168,6 +168,10 @@ if AWS_S3_BUCKET_NAME:
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Allow photo uploads up to 20 MB (default is 2.5 MB, too small for phone photos)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20 MB
+
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "arrangement-list"
 LOGOUT_REDIRECT_URL = "login"
