@@ -364,6 +364,28 @@
     tr.row-link:active td { background: #f4eef1; }
     @media (max-width: 767px) {
       .edit-col { display: none; }
+      /* Invoice line-items table: name on top, data fields below */
+      .line-items-table thead { display: none; }
+      .line-items-table tr.line-item-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem 0.5rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .line-items-table tr.line-item-row td { display: block; padding: 0; border: none; }
+      .line-items-table td.col-li-name { flex: 0 0 100%; font-weight: 600; }
+      .line-items-table td.col-li-name input[type="text"] { width: 100%; font-weight: 600; }
+      .line-items-table td.col-li-kind,
+      .line-items-table td.col-li-size,
+      .line-items-table td.col-li-grade,
+      .line-items-table td.col-li-used,
+      .line-items-table td.col-li-onhand { display: none; }
+      .line-items-table td.col-li-qty input { width: 4rem; }
+      .line-items-table td.col-li-total input { width: 5rem; }
+      .line-items-table td.col-li-flower select { max-width: 9rem; }
+      .line-items-table td.col-li-delete { margin-left: auto; }
     }
     tr.inv-expired td { opacity: 0.5; text-decoration: line-through; }
     .delivery { margin-top: 0.75rem; }
