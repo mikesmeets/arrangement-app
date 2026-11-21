@@ -44,7 +44,14 @@
                     aria-label="Increase quantity">+</button>
           </div>
         </td>
-        <td>${{ item.product.current_avg_cost|floatformat:2 }}</td>
+        <td>
+          {% if item.source_line_item %}
+            ${{ item.source_line_item.per_stem_cost|floatformat:2 }}
+            <span class="muted" style="font-size:0.8rem;display:block;">inv #{{ item.source_line_item.invoice.vendor_invoice_number|default:item.source_line_item.invoice.date }}</span>
+          {% else %}
+            ${{ item.product.current_avg_cost|floatformat:2 }}
+          {% endif %}
+        </td>
         <td>${{ item.line_cost|floatformat:2 }}</td>
         <td>
           <button class="btn btn-danger"

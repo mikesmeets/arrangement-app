@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from catalog.models import Invoice, Product, Subscription
+from catalog.models import Invoice, InvoiceLineItem, Product, Subscription
 
 from .forms import ArrangementForm
 from .models import Arrangement, ArrangementItem
@@ -89,15 +89,18 @@ def arrangement_subscription_name(request, pk):
 
 
 def _recent_invoice_products():
-    """Recent invoices paired with the distinct products still in active stock,
-    for the invoice-based picker in the arrangement builder. Buttons are labelled
-    with the product's vendor-abbreviated label. Only invoices/products with
-    unexpired inventory show — expired stock has no cost so it's not addable.
-    Products not sourced from a recent invoice (seeded or manually-added stock)
-    fall into a per-vendor group so every in-stock product stays addable."""
+    """Recent invoices paired with the unexpired flower line items, for the
+    invoice-based picker in the arrangement builder. Each button maps to a
+    specific InvoiceLineItem so the arrangement can record exactly which
+    delivery's cost applies. Products not from a recent invoice fall into a
+    per-vendor group; those buttons send only the product id and fall back to
+    the average cost."""
     invoices = (
         Invoice.objects.select_related("vendor")
-        .prefetch_related("line_items__product__vendor", "line_items__product__flower__variety")
+        .prefetch_related(
+            "line_items__product__vendor",
+            "line_items__product__flower__variety",
+        )
         .filter(
             line_items__expired=False,
             line_items__product__isnull=False,
@@ -109,7 +112,7 @@ def _recent_invoice_products():
     rows = []
     surfaced = set()
     for invoice in invoices:
-        products = []
+        line_items = []
         seen = set()
         for line_item in invoice.line_items.all():
             product = line_item.product
@@ -117,10 +120,10 @@ def _recent_invoice_products():
                 continue
             if product.id not in seen:
                 seen.add(product.id)
-                products.append(product)
+                line_items.append(line_item)
                 surfaced.add(product.id)
-        if products:
-            rows.append({"invoice": invoice, "vendor": invoice.vendor, "products": products})
+        if line_items:
+            rows.append({"invoice": invoice, "vendor": invoice.vendor, "line_items": line_items})
         if len(rows) >= RECENT_INVOICE_LIMIT:
             break
 
@@ -153,21 +156,34 @@ def _items_response(request, arrangement):
 def arrangement_add_item(request, pk):
     arrangement = get_object_or_404(Arrangement, pk=pk)
     if request.method == "POST":
-        product_id = request.POST.get("product")
         try:
             quantity = Decimal(request.POST.get("quantity") or "1")
         except InvalidOperation:
             quantity = Decimal("1")
-        # Supplies are overhead, never an arrangement ingredient — they're kept
-        # out of the pickers, and refused here too.
-        product = Product.objects.filter(
-            pk=product_id, kind__in=Product.ARRANGEABLE_KINDS
-        ).first()
+
+        line_item_id = request.POST.get("line_item")
+        source_line_item = None
+        product = None
+
+        if line_item_id:
+            source_line_item = InvoiceLineItem.objects.filter(
+                pk=line_item_id,
+                expired=False,
+                product__kind__in=Product.ARRANGEABLE_KINDS,
+            ).select_related("product").first()
+            if source_line_item:
+                product = source_line_item.product
+        else:
+            product_id = request.POST.get("product")
+            product = Product.objects.filter(
+                pk=product_id, kind__in=Product.ARRANGEABLE_KINDS
+            ).first()
+
         if product:
             item, created = ArrangementItem.objects.get_or_create(
                 arrangement=arrangement,
                 product=product,
-                defaults={"quantity": quantity},
+                defaults={"quantity": quantity, "source_line_item": source_line_item},
             )
             if not created:
                 item.quantity += quantity

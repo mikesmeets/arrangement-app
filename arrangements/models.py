@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import models
 from django.utils import timezone
 
-from catalog.models import Flower, GlobalSettings, Product, Subscription  # noqa: F401
+from catalog.models import Flower, GlobalSettings, InvoiceLineItem, Product, Subscription  # noqa: F401
 
 
 class Arrangement(models.Model):
@@ -102,9 +102,14 @@ class Arrangement(models.Model):
 
     def _cost_of(self, kind):
         total = Decimal("0.00")
-        for item in self.items.select_related("product"):
+        for item in self.items.select_related("product", "source_line_item"):
             if item.product.kind == kind:
-                total += item.product.current_avg_cost * item.quantity
+                cost = (
+                    item.source_line_item.per_stem_cost
+                    if item.source_line_item_id
+                    else item.product.current_avg_cost
+                )
+                total += cost * item.quantity
         return total
 
     @property
@@ -165,6 +170,13 @@ class ArrangementItem(models.Model):
     product = models.ForeignKey(
         Product, on_delete=models.PROTECT, related_name="arrangement_items"
     )
+    source_line_item = models.ForeignKey(
+        InvoiceLineItem,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="arrangement_items",
+    )
     flower = models.ForeignKey(
         Flower,
         on_delete=models.PROTECT,
@@ -183,4 +195,9 @@ class ArrangementItem(models.Model):
 
     @property
     def line_cost(self):
-        return self.product.current_avg_cost * self.quantity
+        cost = (
+            self.source_line_item.per_stem_cost
+            if self.source_line_item_id
+            else self.product.current_avg_cost
+        )
+        return cost * self.quantity

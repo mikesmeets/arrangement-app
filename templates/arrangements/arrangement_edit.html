@@ -87,6 +87,24 @@
         <span class="muted">{% if row.invoice %}{{ row.invoice.date }}{% if row.invoice.vendor_invoice_number %} &middot; #{{ row.invoice.vendor_invoice_number }}{% endif %}{% else %}Direct / manual stock{% endif %} &middot; {{ row.products|length }} product{{ row.products|length|pluralize }}</span>
       </summary>
       <div class="flower-grid">
+        {% for line_item in row.line_items %}{% with product=line_item.product %}
+          <button type="button"
+                  class="flower-btn{% if product.flower %} design-{{ product.flower.design_category }}{% endif %}"
+                  hx-post="{% url 'arrangement-add-item' arrangement.pk %}"
+                  hx-vals='{"line_item": "{{ line_item.id }}", "quantity": 1}'
+                  hx-target="#items-and-price"
+                  hx-swap="outerHTML">
+            {% if product.flower.image %}
+              <img src="{{ product.flower.image.url }}" alt="" class="flower-thumb">
+            {% endif %}
+            {% if product.flower %}
+              <span class="flower-btn-name">{{ product.flower.variety.name }}</span>
+              <span class="flower-btn-meta">{{ product.flower.color }}</span>
+            {% else %}
+              <span class="flower-btn-name">{{ product.name|title }}</span>
+            {% endif %}
+          </button>
+        {% endwith %}{% endfor %}
         {% for product in row.products %}
           <button type="button"
                   class="flower-btn{% if product.flower %} design-{{ product.flower.design_category }}{% endif %}"
