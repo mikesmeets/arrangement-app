@@ -33,7 +33,7 @@
     }
     header a { color: white; text-decoration: none; font-weight: 600; }
     nav { display: flex; gap: 1rem; flex-wrap: wrap; }
-    main { padding: 1rem; max-width: 900px; margin: 0 auto; }
+    main { padding: 1rem; max-width: 1200px; margin: 0 auto; }
     .card {
       background: white;
       border: 1px solid var(--border);
@@ -364,7 +364,9 @@
     tr.row-link:active td { background: #f4eef1; }
     @media (max-width: 767px) {
       .edit-col { display: none; }
-      /* Invoice line-items table: name on top, data fields below */
+    }
+    /* Invoice line-items table: name on top, data fields below */
+    @media (max-width: 900px) {
       .line-items-table thead { display: none; }
       .line-items-table tr.line-item-row {
         display: flex;
