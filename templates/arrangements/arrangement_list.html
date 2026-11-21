@@ -12,7 +12,7 @@
   <table>
     <thead>
       <tr>
-        <th>SKU</th>
+        <th class="sku-col">SKU</th>
         <th>Name</th>
         <th>Status</th>
         <th>Suggested price</th>
@@ -22,7 +22,7 @@
     <tbody>
       {% for arrangement in arrangements %}
       <tr class="row-link" onclick="location.href='{% url 'arrangement-edit' arrangement.pk %}'">
-        <td>{{ arrangement.sku }}</td>
+        <td class="sku-col">{{ arrangement.sku }}</td>
         <td>{{ arrangement.name }}</td>
         <td>{{ arrangement.get_status_display }}</td>
         <td>${{ arrangement.suggested_price|floatformat:2 }}</td>

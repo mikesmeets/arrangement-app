@@ -3,10 +3,10 @@
     <thead>
       <tr>
         <th>Vendor</th>
-        <th>Invoice #</th>
+        <th class="inv-num-col">Invoice #</th>
         <th>Date</th>
         <th>Total cost</th>
-        <th title="Estimated: usage is tracked per product, so each product's used share is apportioned across the invoices that supplied it.">Used (est.)</th>
+        <th class="inv-used-col" title="Estimated: usage is tracked per product, so each product's used share is apportioned across the invoices that supplied it.">Used (est.)</th>
         <th>Status</th>
         <th></th>
       </tr>
@@ -15,10 +15,10 @@
       {% for invoice in invoices %}
       <tr class="row-link" onclick="location.href='{% url 'invoice-review' invoice.pk %}'">
         <td>{{ invoice.vendor|default:"—" }}</td>
-        <td>{{ invoice.vendor_invoice_number|default:"—" }}</td>
+        <td class="inv-num-col">{{ invoice.vendor_invoice_number|default:"—" }}</td>
         <td>{{ invoice.date }}</td>
         <td>${{ invoice.total_cost|floatformat:2 }}</td>
-        <td>
+        <td class="inv-used-col">
           {% if invoice.estimated_usage_pct is not None %}
             ${{ invoice.estimated_value_used|floatformat:2 }} <span class="muted">({{ invoice.estimated_usage_pct|floatformat:0 }}%)</span>
           {% else %}<span class="muted">—</span>{% endif %}

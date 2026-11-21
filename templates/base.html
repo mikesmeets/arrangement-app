@@ -363,7 +363,12 @@
     tr.row-link:hover td { background: #faf4f7; }
     tr.row-link:active td { background: #f4eef1; }
     @media (max-width: 767px) {
+      body { overflow-x: hidden; }
+      .card { overflow-x: auto; }
       .edit-col { display: none; }
+      .sku-col { display: none; }
+      .inv-num-col { display: none; }
+      .inv-used-col { display: none; }
     }
     /* Invoice line-items table — desktop: fixed layout, name takes all spare space */
     .line-items-table { table-layout: fixed; }
